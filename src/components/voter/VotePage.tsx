@@ -1,80 +1,121 @@
-// VotePage.tsx
-import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Button,
-  Heading,
-  Stack,
-  Radio,
-  RadioGroup,
-} from '@chakra-ui/react';
+import { Box, Button, useDisclosure } from '@chakra-ui/react';
+import { useEffect, useRef, useState } from 'react';
+import ElectionRadioGroup from './components/ElectionRadioGroup';
+import ReviewModal from './components/ReviewModal';
 
 interface Election {
   id: number;
   name: string;
-  candidates: string[];
+  positions: {
+    id: number;
+    name: string;
+    candidates: {
+      id: number;
+      name: string;
+      partyList: string;
+      extraText: string;
+      imageUrl: string;
+    }[];
+    multiple?: boolean;
+  }[];
 }
 
 const VotePage = () => {
   const [elections, setElections] = useState<Election[]>([]);
-  const [selectedElection, setSelectedElection] = useState<number | null>(null);
-  const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
+  const [selectedCandidates, setSelectedCandidates] = useState<{ [key: number]: string[] }>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
-    // Fetch elections from backend
     const fetchElections = async () => {
-      // Example data fetching
       const fetchedElections: Election[] = [
-        { id: 1, name: 'Election A', candidates: ['Candidate 1', 'Candidate 2'] },
-        { id: 2, name: 'Election B', candidates: ['Candidate 3', 'Candidate 4'] },
-        // Add more elections as needed
+        {
+          id: 1,
+          name: 'Election A',
+          positions: [
+            {
+              id: 1,
+              name: 'President',
+              candidates: [
+                { id: 1, name: 'Candidate 1', partyList: 'Party A', extraText: 'Extra info 1', imageUrl: 'https://placehold.co/200' },
+                { id: 2, name: 'Candidate 2', partyList: 'Party B', extraText: 'Extra info 2', imageUrl: 'https://placehold.co/200' },
+              ],
+            },
+            {
+              id: 2,
+              name: 'Vice President',
+              candidates: [
+                { id: 3, name: 'Candidate 3', partyList: 'Party C', extraText: 'Extra info 3', imageUrl: 'https://placehold.co/200' },
+                { id: 4, name: 'Candidate 4', partyList: 'Party D', extraText: 'Extra info 4', imageUrl: 'https://placehold.co/200' },
+              ],
+              multiple: true,
+            },
+            {
+              id: 3,
+              name: 'Secretary',
+              candidates: [
+                { id: 5, name: 'Candidate 5', partyList: 'Party E', extraText: 'Extra info 5', imageUrl: 'https://placehold.co/200' },
+                { id: 6, name: 'Candidate 6', partyList: 'Party F', extraText: 'Extra info 6', imageUrl: 'https://placehold.co/200' },
+              ],
+            },
+          ],
+        },
       ];
       setElections(fetchedElections);
-      setSelectedElection(selectedElection)
     };
 
     fetchElections();
   }, []);
 
+  const handleCandidateChange = (positionId: number, selected: string[]) => {
+    setSelectedCandidates((prev) => ({ ...prev, [positionId]: selected }));
+  };
+
   const handleVote = () => {
-    if (selectedElection !== null && selectedCandidate !== null) {
-      // Submit vote to backend
-      console.log(`Voted for ${selectedCandidate} in election ${selectedElection}`);
-    } else {
-      // Handle case where no candidate or election is selected
-      console.log('Please select an election and a candidate.');
-    }
+    console.log('Submitting vote with selections:', selectedCandidates);
+    // Implement vote submission logic
   };
 
   return (
-    <Box p={8}>
-      <Heading as="h1" mb={6}>Vote in Elections</Heading>
-      <Stack spacing={8}>
-        {elections.map((election) => (
-          <Box
-            key={election.id}
-            p={5}
-            shadow="md"
-            border="1px solid"
-            borderColor='gray.200'
-            borderRadius="md"
-          >
-            <Heading as="h2" size="md" mb={4}>{election.name}</Heading>
-            <RadioGroup onChange={setSelectedCandidate}>
-              <Stack direction="column">
-                {election.candidates.map((candidate) => (
-                  <Radio key={candidate} value={candidate}>
-                    {candidate}
-                  </Radio>
-                ))}
-              </Stack>
-            </RadioGroup>
-            <Button mt={4} colorScheme="blue" onClick={handleVote}>
-              Vote
-            </Button>
-          </Box>
-        ))}
-      </Stack>
+    <Box
+      ref={containerRef}
+      width="100%"
+      height="100vh"
+      overflowX="hidden"
+      overflowY="auto"
+      flexDirection="column"
+      margin="auto"
+      sx={{
+        "& > *": {
+          flex: "0 0 100%",
+          scrollSnapAlign: "start",
+        },
+        scrollSnapType: "y mandatory",
+        scrollBehavior: "smooth",
+        scrollbarWidth: "none",
+        "::-webkit-scrollbar": {
+          display: "none",
+        },
+      }}
+    >
+      {elections.map((election) =>
+        election.positions.map((position) => (
+          <ElectionRadioGroup
+            key={position.id}
+            position={position}
+            onCandidateChange={(selected) => handleCandidateChange(position.id, selected)}
+          />
+        ))
+      )}
+      <Box p={5}>
+        <Button mt={4} colorScheme="blue" onClick={handleVote}>
+          Submit Ballot
+        </Button>
+        <Button mt={4} ml={4} colorScheme="teal" onClick={onOpen}>
+          Review Ballot
+        </Button>
+      </Box>
+      <ReviewModal isOpen={isOpen} onClose={onClose} selectedCandidates={selectedCandidates} positions={elections[0]?.positions || []} />
     </Box>
   );
 };

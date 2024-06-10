@@ -3,3 +3,21 @@
 * {
   font-family: Poppins;
 }
+/* Add this CSS to your global styles or within your component styles */
+.vertical-snap-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+.vertical-snap-item {
+  flex: 0 0 100vh;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
