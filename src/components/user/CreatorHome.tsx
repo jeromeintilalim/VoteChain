@@ -12,7 +12,7 @@ import {
 const CreatorHome = () => {
   return (
     <Box p={8}>
-      <Heading mb={6}>Creator Dashboard</Heading>
+      <Heading mb={6}>User Dashboard</Heading>
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
         <Stat
           p={5}

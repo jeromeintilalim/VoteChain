@@ -1,39 +1,36 @@
-import React, { ReactNode } from 'react';
 import {
-    IconButton,
     Box,
+    BoxProps,
     CloseButton,
-    Flex,
-    Icon,
-    useColorModeValue,
-    Link,
     Drawer,
     DrawerContent,
-    Text,
-    useDisclosure,
-    BoxProps,
+    Flex,
     FlexProps,
+    Icon,
+    IconButton,
+    Link,
+    Text,
+    useColorModeValue,
+    useDisclosure,
 } from '@chakra-ui/react';
+import { ReactNode } from 'react';
+import { IconType } from 'react-icons';
+import { FaDropbox, FaVoteYea } from 'react-icons/fa';
 import {
     FiHome,
-    FiTrendingUp,
-    FiCompass,
-    FiStar,
     FiMenu,
 } from 'react-icons/fi';
-import { IconType } from 'react-icons';
-import { ReactText } from 'react';
 
 interface LinkItemProps {
     name: string;
     icon: IconType;
+    to: string
 }
 
 const LinkItems: Array<LinkItemProps> = [
-    { name: 'Home', icon: FiHome },
-    { name: 'Manage Users', icon: FiTrendingUp },
-    { name: 'Manage Elections', icon: FiCompass },
-    { name: 'Manage Candidates', icon: FiStar }
+    { name: 'Home', icon: FiHome, to: 'dashboard' },
+    { name: 'My Elections', icon: FaVoteYea, to: 'elections' },
+    { name: 'Results', icon: FaDropbox, to: 'results' },
 ];
 
 export default function Sidebar({ children }: { children: ReactNode }) {
@@ -96,7 +93,7 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 
 interface NavItemProps extends FlexProps {
     icon: IconType;
-    children: ReactText;
+    children: string;
 }
 const NavItem = ({ icon, children, ...rest }: NavItemProps) => {
     return (

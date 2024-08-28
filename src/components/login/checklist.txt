@@ -1,0 +1,176 @@
+- User Account
+    [X] - User can log in
+    [X] - User can register
+    [ ] - User can log out
+    [ ] - User can log in again
+    [ ] - User can log in
+
+- Voting Process
+    [ ] - 
+
+
+
+
+
+///////////////////// GPT //////////////////////
+1. Authentication & Authorization
+    User Registration:
+    [ ] - Ensure users can register with MetaMask.
+    [ ] - Verify that a unique Nonce is generated and stored.
+    [ ] - Validate user input (e.g., email, birthdate) during registration.
+    [ ] - Ensure the backend handles duplicate registrations appropriately.
+
+    Login Flow:
+    [ ] - Check if users can log in via MetaMask and sign the nonce.
+    [ ] - Verify that the backend correctly verifies the signed nonce.
+    [ ] - Ensure JWT token generation after successful login.
+    [ ] - Implement session management (e.g., JWT token expiry, refresh tokens).
+
+    Authorization:
+    [ ] - Implement role-based access control (e.g., user, admin).
+    [ ] - Ensure protected routes are only accessible by authorized users.
+
+    Logout:
+    [ ] - Ensure users can log out and invalidate their session.
+    [ ] - Handle JWT token invalidation on logout.
+
+2. Front-End Functionality
+    MetaMask Integration:
+    [ ] - Ensure MetaMask is detected and integrated properly.
+    [ ] - Check for account change events and update the UI accordingly.
+    [ ] - Provide feedback if MetaMask is not detected.
+
+    Forms & Data Handling:
+    [ ] - Validate form inputs (e.g., required fields, correct formats).
+    [ ] - Implement proper error handling and display error messages to the user.
+    [ ] - Ensure form data is sent correctly to the backend.
+
+    User Interface (UI):
+    [ ] - Ensure a consistent and responsive design across devices.
+    [ ] - Provide visual feedback (e.g., loading indicators, success messages).
+    [ ] - Ensure accessibility (e.g., ARIA labels, keyboard navigation).
+
+    Navigation:
+    [ ] - Ensure navigation between pages is smooth and maintains state.
+    [ ] - Implement redirects after successful login, registration, or logout.
+    [ ] - Handle unauthorized access with proper redirects (e.g., to login page).
+
+    Dashboard:
+    [ ] - Display user-specific information (e.g., profile details, account balance).
+    [ ] - Implement features like viewing and editing profile data.
+    [ ] - Ensure data is fetched and displayed correctly from the backend.
+3. Back-End Services
+    API Endpoints:
+    [ ] - Ensure all API endpoints are functioning as expected.
+    [ ] - Validate input data on the server-side.
+    [ ] - Return appropriate HTTP status codes and messages for different scenarios (e.g., success, error, not found).
+
+    Database Management:
+    [ ] - Ensure the database schema matches the application needs (e.g., fields for Nonce, WalletAddress).
+    [ ] - Implement proper indexing for faster queries (e.g., on WalletAddress).
+    [ ] - Handle database migrations smoothly and ensure data integrity.
+
+    Logging & Monitoring:
+    [ ] - Implement logging for critical actions (e.g., user registration, login attempts).
+    [ ] - Monitor API performance and error rates.
+    [ ] - Set up alerts for critical failures or unusual activity.
+
+4. Security
+    CORS (Cross-Origin Resource Sharing):
+    [ ] - Ensure CORS is configured correctly to allow requests from your frontend.
+    [ ] - Limit allowed origins, methods, and headers.
+    
+    HTTPS/SSL:
+    [ ] - Ensure the backend is using HTTPS in production.
+    [ ] - Handle SSL certificates correctly (e.g., avoid mixed content issues).
+
+    Data Validation & Sanitization:
+    [ ] - Validate and sanitize all incoming data to prevent injection attacks (e.g., SQL, XSS).
+    [ ] - Implement strong validation on all user inputs.
+
+    Token Security:
+    [ ] - Ensure JWT tokens are signed and validated correctly.
+    [ ] - Implement token expiration and refresh logic.
+    [ ] - Securely store tokens on the client-side (e.g., HttpOnly cookies, local storage).
+
+    Role-Based Access Control:
+    [ ] - Implement role-based permissions in the backend.
+    [ ] - Ensure users cannot access unauthorized resources or perform restricted actions.
+
+5. Performance Optimization
+    Load Times:
+    [ ] - Optimize the loading time of your app (e.g., minimize JavaScript/CSS, use lazy loading).
+    [ ] - Implement caching for static resources.
+
+    Database Performance:
+    [ ] - Ensure queries are optimized for speed.
+    [ ] - Use connection pooling for database connections.
+
+    API Performance:
+    [ ] - Optimize the performance of API endpoints (e.g., reduce payload sizes).
+    [ ] - Implement rate limiting to prevent abuse.
+
+    Asset Management:
+    [ ] - Compress and optimize images and other static assets.
+    [ ] - Use a Content Delivery Network (CDN) for static assets.
+
+6. Testing
+    Unit Tests:
+    [ ] - Write unit tests for key components (e.g., authentication logic, form validation).
+    [ ] - Ensure unit tests cover edge cases and potential failure points.
+
+    Integration Tests:
+    [ ] - Implement integration tests to verify the interaction between components (e.g., frontend-to-backend communication).
+    [ ] - Test the full authentication flow with MetaMask.
+
+    End-to-End (E2E) Tests:
+    [ ] - Automate E2E tests for critical user journeys (e.g., registration, login, dashboard access).
+    [ ] - Use tools like Cypress or Selenium for browser-based testing.
+
+7. User Experience (UX)
+    Feedback & Messaging:
+    [ ] - Provide clear feedback for user actions (e.g., success, errors).
+    [ ] - Implement user-friendly error messages and guidance.
+
+    Onboarding & Tutorials:
+    [ ] - Implement onboarding flows or tutorials for new users.
+    [ ] - Ensure that instructions for connecting MetaMask and using the app are clear.
+
+    Accessibility:
+    [ ] - Ensure the app is accessible to users with disabilities (e.g., screen reader compatibility).
+    [ ] - Test the app’s usability across different devices and screen sizes.
+
+8. Deployment & Maintenance
+    Deployment Pipeline:
+    [ ] - Set up CI/CD pipelines for automated testing and deployment.
+    [ ] - Implement rollback mechanisms in case of deployment failures.
+    
+    Environment Configuration:
+    [ ] - Ensure environment variables are correctly configured for different environments (e.g., development, staging, production).
+    [ ] - Manage secrets and sensitive information securely.
+
+    Backup & Recovery:
+    [ ] - Implement regular backups for your database.
+    [ ] - Ensure you have a recovery plan in case of data loss or corruption.
+
+9. Documentation
+    API Documentation:
+    [ ] - Document all API endpoints and their usage.
+    [ ] - Ensure that your API documentation is up to date.
+
+    Developer Documentation:
+    [ ] - Provide clear instructions for setting up and running the app locally.
+    [ ] - Document code structure, dependencies, and important components.
+
+    User Documentation:
+    [ ] - Provide user guides or FAQs for using the app.
+    [ ] - Update documentation as new features are added.
+
+10. Compliance & Legal
+    Data Privacy:
+    [ ] - Ensure compliance with data privacy laws (e.g., GDPR).
+    [ ] - Implement and document data retention policies.
+
+    Terms of Service & Privacy Policy:
+    [ ] - Ensure that your app’s terms of service and privacy policy are up to date.
+    [ ] - Make these documents easily accessible to users.

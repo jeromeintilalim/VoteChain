@@ -1,73 +1,106 @@
-import { Box, Heading, Stack, useCheckboxGroup, useRadioGroup } from '@chakra-ui/react';
+import { Box, Heading, Stack, Text, useCheckboxGroup, useRadioGroup } from '@chakra-ui/react';
 import React from 'react';
-import RadioCard from './RadioCard';
 import CheckboxCard from './CheckboxCard';
+import RadioCard from './RadioCard';
 
-interface ElectionRadioGroupProps {
-  position: {
+interface Candidate {
     id: number;
     name: string;
-    candidates: {
-      id: number;
-      name: string;
-      partyList: string;
-      extraText: string;
-      imageUrl: string;
-    }[];
-    multiple?: boolean;
-  };
-  onCandidateChange: (selected: string[]) => void;
+    partyList: string;
+    details: string;
+    imageUrl: string;
 }
 
-const ElectionRadioGroup: React.FC<ElectionRadioGroupProps> = ({ position, onCandidateChange }) => {
-  const isMultiple = position.multiple;
+interface Position {
+    id: number;
+    title: string;
+    candidates: Candidate[];
+    multiple?: boolean;
+    maxSelections?: number;
+}
 
-  const handleChange = (selected: string | string[]) => {
-    if (Array.isArray(selected)) {
-      onCandidateChange(selected);
-    } else {
-      onCandidateChange([selected]);
-    }
-  };
+interface ElectionRadioGroupProps {
+    position: Position;
+    onCandidateChange: (selected: string[]) => void;
+    selectedCandidates: string[];
+}
 
-  const radioGroupProps = useRadioGroup({
-    onChange: (value) => handleChange(value as string),
-  });
+const ElectionRadioGroup: React.FC<ElectionRadioGroupProps> = ({ position, onCandidateChange, selectedCandidates }) => {
+    const isMultiple = position.multiple;
+    const maxSelections = isMultiple ? position.maxSelections || Infinity : 1;
 
-  const checkboxGroupProps = useCheckboxGroup({
-    onChange: (value) => handleChange(value as string[]),
-  });
+    const handleChange = (selected: string | string[]) => {
+        if (Array.isArray(selected)) {
+            if (selected.length <= maxSelections) {
+                onCandidateChange(selected);
+            }
+        } else {
+            onCandidateChange([selected]);
+        }
+    };
 
-  return (
-    <Box
-      p={5}
-      height="100vh"
-      shadow="md"
-      border="1px solid"
-      borderColor="gray.200"
-      borderRadius="md"
-      className="vertical-snap-item"
-    >
-      <Heading as="h2" size="md" mb={4}>
-        {position.name}
-      </Heading>
-      <Stack direction="row">
-        {position.candidates.map((candidate) => {
-          if (isMultiple) {
-            const checkbox = checkboxGroupProps.getCheckboxProps({ value: candidate.id.toString() });
-            return (
-              <CheckboxCard key={candidate.id} candidate={candidate} {...checkbox} />
-            );
-          } else {
-            const radio = radioGroupProps.getRadioProps({ value: candidate.id.toString() });
-            return (
-              <RadioCard key={candidate.id} candidate={candidate} {...radio} />
-            );
-          }
-        })}
-      </Stack>
-    </Box>
-  );
+    const radioGroupProps = useRadioGroup({
+        onChange: (value) => handleChange(value as string),
+        value: selectedCandidates[0] || '',
+    });
+
+    const checkboxGroupProps = useCheckboxGroup({
+        onChange: (value) => {
+            if ((value as string[]).length <= maxSelections) {
+                handleChange(value as string[]);
+            }
+        },
+        value: selectedCandidates,
+    });
+
+    return (
+        <Box
+            height="100vh"
+            p={5}
+            shadow="md"
+            border="1px solid"
+            borderColor="gray.200"
+            borderRadius="md"
+            className="vertical-snap-item"
+            data-position-id={position.id}
+        >
+            <Heading as="h2" size="md" mb={4}>
+                {position.title}
+            </Heading>
+            {isMultiple && (
+                <Text mb={4}>Select up to {maxSelections} candidates</Text>
+            )}
+            <Stack direction="row" spacing={4} wrap="wrap">
+                {position.candidates.length > 0 ? (
+                    position.candidates.map((candidate) => {
+                        const candidateKey = `candidate-${position.id}-${candidate.id}`;
+
+                        if (isMultiple) {
+                            const checkbox = checkboxGroupProps.getCheckboxProps({ value: candidate.id.toString() });
+                            return (
+                                <CheckboxCard
+                                    key={candidateKey}
+                                    candidate={candidate}
+                                    {...checkbox} // Spread checkbox props to CheckboxCard
+                                />
+                            );
+                        } else {
+                            const radio = radioGroupProps.getRadioProps({ value: candidate.id.toString() });
+                            return (
+                                <RadioCard
+                                    key={candidateKey}
+                                    candidate={candidate}
+                                    {...radio} // Spread radio props to RadioCard
+                                />
+                            );
+                        }
+                    })
+                ) : (
+                <Text>No candidates available.</Text>
+                )}
+            </Stack>
+        </Box>
+    );
 };
 
 export default ElectionRadioGroup;

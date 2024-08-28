@@ -5,6 +5,7 @@ import { FaEthereum } from "react-icons/fa";
 import LoginPage from "./LoginPage";
 import RegisterPage from "./RegisterPage";
 import { MdKeyboardArrowLeft } from "react-icons/md";
+import NewMetamaskLogin from './../components/login/NewMetamaskLogin';
 
 const LandingPage = () => {
     const [activeForm, setActiveForm] = useState(''); // State to track which form is active
@@ -35,21 +36,21 @@ const LandingPage = () => {
             {/* Right Side */}
             <Box w='50%' h='100vh' bg='white' p="0" overflow="hidden">
                 <AnimatePresence mode="wait">
-                    {activeForm === '' && (
-                        <Center
-                            key="main"
-                            as={motion.div}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            variants={formVariants}
-                            transition={transition}
-                            w='100%'
-                            h='100%'
-                        >
-                            <Stack>
-                                <Heading fontWeight="800" fontSize="54px">Welcome to <Text as="span" color="#6937FF" fontStyle="italic">VoteChain</Text></Heading>
-                                <Stack direction='row' justifyContent="space-evenly">
+                    {/* {activeForm === '' && ( */}
+                    <Center
+                        key="main"
+                        as={motion.div}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        variants={formVariants}
+                        transition={transition}
+                        w='100%'
+                        h='100%'
+                    >
+                        <Stack>
+                            <Heading fontWeight="800" fontSize="54px">Welcome to <Text as="span" color="#6937FF" fontStyle="italic">VoteChain</Text></Heading>
+                            {/* <Stack direction='row' justifyContent="space-evenly">
                                     <Button
                                         p="32px"
                                         w="45%"
@@ -80,12 +81,13 @@ const LandingPage = () => {
                                     >
                                         Register
                                     </Button>
-                                </Stack>
-                            </Stack>
-                        </Center>
-                    )}
+                                </Stack> */}
+                            <NewMetamaskLogin />
+                        </Stack>
+                    </Center>
+                    {/* )} */}
 
-                    {activeForm === 'vote' && (
+                    {/* {activeForm === 'vote' && (
                         <Center
                             key="vote"
                             as={motion.div}
@@ -113,7 +115,7 @@ const LandingPage = () => {
                                 <LoginPage onRegisterClick={() => handleButtonClick('register')} />
                             </Box>
                         </Center>
-                    )}
+                    )} 
 
                     {activeForm === 'register' && (
                         <Center
@@ -143,7 +145,7 @@ const LandingPage = () => {
                                 <RegisterPage onLoginClick={() => handleButtonClick('vote')} />
                             </Box>
                         </Center>
-                    )}
+                    )} */}
                 </AnimatePresence>
             </Box>
         </Flex>
