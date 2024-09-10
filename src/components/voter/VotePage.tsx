@@ -28,7 +28,7 @@ interface Election {
 }
 
 const VotePage = () => {
-	const { electionId } = useParams<{ electionId: string }>();
+	const { joinCode } = useParams<{ joinCode: string }>();
 	const [election, setElection] = useState<Election | null>(null);
 	const [selectedCandidates, setSelectedCandidates] = useState<{ [key: number]: string[] }>({});
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +46,7 @@ const VotePage = () => {
 			}
 
 			try {
-				const response = await fetch(`http://localhost:7122/api/election/${electionId}`, {
+				const response = await fetch(`http://localhost:7122/api/election/${joinCode}`, {
 					method: 'GET',
 					headers: {
 						Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ const VotePage = () => {
 		};
 
 		fetchElection();
-	}, [electionId, toast, navigate]);
+	}, [joinCode, toast, navigate]);
 
 
 	const handleCandidateChange = (positionId: number, selected: string[]) => {

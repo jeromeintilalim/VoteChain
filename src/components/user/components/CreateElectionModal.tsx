@@ -24,6 +24,7 @@ interface Election {
     startDate: string;
     endDate: string;
     positions?: string[];
+    joinCode: string;
   }
 
 interface CreateElectionModalProps {
@@ -71,6 +72,8 @@ const CreateElectionModal: React.FC<CreateElectionModalProps> = ({ isOpen, onClo
             startDate,
             endDate,
             positions: election ? election.positions : [], // Include positions even if empty
+            joinCode: election ? election.joinCode : '', // Include join code if editing
+            electionAccesses: [],
         };
     
         try {
@@ -89,7 +92,7 @@ const CreateElectionModal: React.FC<CreateElectionModalProps> = ({ isOpen, onClo
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                     },
-                    body: JSON.stringify(electionData),
+                    body: JSON.stringify(electionData), // Do NOT include JoinCode here
                 });
     
             if (response.ok) {
@@ -121,7 +124,6 @@ const CreateElectionModal: React.FC<CreateElectionModalProps> = ({ isOpen, onClo
             });
         }
     };
-    
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>

@@ -74,7 +74,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, selectedCand
 											}
 											return (
 												<ListItem key={`candidate-${position.id}-${candidateId}`} display="flex" alignItems="center" my={1}>
-													<Image src="https://placehold.co/400" alt={candidate.name} boxSize="40px" borderRadius="full" mr={2} />
+													<Image src={`http://localhost:7122/${candidate.imageUrl}`} alt={candidate.name} boxSize="40px" borderRadius="full" mr={2} />
 													<Box>
 														<Text><Text as="span" fontWeight="bold">{candidate.name}</Text> - {candidate.details}</Text>
 														<Text></Text>
