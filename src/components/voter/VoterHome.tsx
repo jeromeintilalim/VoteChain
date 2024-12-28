@@ -1,98 +1,102 @@
-import React, { useEffect, useState } from 'react';
 import {
 	Box,
+	Flex,
 	Heading,
 	SimpleGrid,
+	Spinner,
 	Stat,
 	StatLabel,
 	StatNumber,
+	Text,
+	VStack,
 	useColorModeValue,
 	useToast,
-	Flex,
 } from '@chakra-ui/react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+interface User {
+	firstName: string;
+	lastName: string;
+	email: string;
+}
 
 const VoterHome = () => {
-	const [elections, setElections] = useState(0);
-	const [user, setUser] = useState();
+	const [userElections, setUserElections] = useState<number>(0);
+	const [enrolledElectionsLength, setEnrolledElectionsLength] = useState<number>(0);
+	const [userData, setUserData] = useState<User | null>(null);
+	const [loading, setLoading] = useState<boolean>(true);
 
 	const toast = useToast();
 	const navigate = useNavigate();
 
-	useEffect(() => {
-		fetchElectionData();
-	}, [elections]);
+	const showToast = useCallback(
+		(options: { title: string; description?: string; status: "info" | "warning" | "success" | "error" }) => {
+			toast({
+				...options,
+				duration: 3000,
+				isClosable: true,
+			});
+		},
+		[toast]
+	);
 
 	useEffect(() => {
 		const token = localStorage.getItem('token');
 		if (!token) {
-			console.error('No token found. Redirecting to login.');
-			navigate('/login');
-		}
-	}, []);
-
-	const fetchElectionData = async () => {
-		const token = localStorage.getItem('token');
-		if (!token) {
-			console.error('No token found. Redirecting to login.');
 			navigate('/login');
 			return;
 		}
 
-		try {
-			const response = await fetch(`http://localhost:7122/api/election`, {
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			const data: any = await response.json();
-			setElections(data.length);
-			console.log('Fetched Election Data:', elections);
+		const fetchData = async () => {
+			try {
+				const headers = { Authorization: `Bearer ${token}` };
 
-		} catch (error) {
-			console.error('Failed to fetch election', error);
-			toast({
-				title: "An error occurred.",
-				description: "Unable to fetch election data.",
-				status: "error",
-				duration: 3000,
-				isClosable: true,
-			});
-		}
-	};
+				// Fetch data in parallel
+				const [enrolledResponse, userResponse, electionsResponse] = await Promise.all([
+					fetch(`http://localhost:7122/api/election/enrolled`, { method: 'GET', headers }),
+					fetch(`http://localhost:7122/api/user/me`, { method: 'GET', headers }),
+					fetch(`http://localhost:7122/api/user/userElections`, { method: 'GET', headers }),
+				]);
 
-	const fetchUserData = async () => {
-		const token = localStorage.getItem('token');
-		if (!token) {
-			console.error('No token found. Redirecting to login.');
-			navigate('/login');
-			return;
-		}
+				if (enrolledResponse.ok) {
+					const enrolledData = await enrolledResponse.json();
+					setEnrolledElectionsLength(enrolledData.length);
+				}
 
-		try {
-			const response = await fetch(`http://localhost:7122/api/user`, {
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			const data: any = await response.json();
-			setElections(data.length);
-			console.log('Fetched Election Data:', elections);
+				if (userResponse.ok) {
+					const userData = await userResponse.json();
+					setUserData(userData);
+				}
 
-		} catch (error) {
-			console.error('Failed to fetch election', error);
-			toast({
-				title: "An error occurred.",
-				description: "Unable to fetch election data.",
-				status: "error",
-				duration: 3000,
-				isClosable: true,
-			});
-		}
-	};
+				if (electionsResponse.ok) {
+					const userElectionsData = await electionsResponse.json();
+					setUserElections(userElectionsData.length || 0);
+				}
+			} catch (error) {
+				console.error('Failed to fetch data:', error);
+				showToast({
+					title: 'Error',
+					description: 'Failed to load data. Please try again later.',
+					status: 'error',
+				});
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchData();
+	}, [navigate, showToast]);
+
+	if (loading) {
+		return (
+			<VStack color="#8C56FF" justifyContent="center" alignItems="center" height="100vh">
+				<Spinner color="#8C56FF" />
+				<Text color="black">Loading...</Text>
+			</VStack>
+		);
+	}
 
 	return (
 		<Flex justify="center" align="center" minH="80vh" p="6">
@@ -108,9 +112,9 @@ const VoterHome = () => {
 				animation={{ duration: 0.5 }}
 			>
 				<Heading as="h1" size="2xl" fontWeight="bold" mb={6}>
-					Voter Dashboard
+					Hello, {userData?.firstName}!
 				</Heading>
-				<SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
+				<SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
 					<Stat
 						p={5}
 						shadow="md"
@@ -119,9 +123,21 @@ const VoterHome = () => {
 						borderRadius="md"
 					>
 						<StatLabel fontSize="lg" fontWeight="semibold">
-							Upcoming Elections
+							Enrolled Elections
 						</StatLabel>
-						<StatNumber fontSize="3xl">{elections}</StatNumber>
+						<StatNumber fontSize="3xl">{enrolledElectionsLength}</StatNumber>
+					</Stat>
+					<Stat
+						p={5}
+						shadow="md"
+						border="1px solid"
+						borderColor={useColorModeValue('gray.200', 'gray.700')}
+						borderRadius="md"
+					>
+						<StatLabel fontSize="lg" fontWeight="semibold">
+							My Elections
+						</StatLabel>
+						<StatNumber fontSize="3xl">{userElections}</StatNumber>
 					</Stat>
 				</SimpleGrid>
 			</Box>

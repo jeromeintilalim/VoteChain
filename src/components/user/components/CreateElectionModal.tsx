@@ -1,20 +1,20 @@
-// src/components/CreateElectionModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalHeader,
-    ModalCloseButton,
-    ModalBody,
-    ModalFooter,
     Button,
+    Flex,
     FormControl,
     FormLabel,
     Input,
+    Modal,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    ModalOverlay,
+    Text,
+    Textarea,
     useToast,
-    Flex,
-    Textarea
 } from '@chakra-ui/react';
 
 interface Election {
@@ -25,90 +25,132 @@ interface Election {
     endDate: string;
     positions?: string[];
     joinCode: string;
-  }
+}
 
 interface CreateElectionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateSuccess: () => void; // Callback to handle actions after a successful creation or update
+    onCreateSuccess: () => void;
     creatorWalletAddress: string;
-    election?: Election | null; // Optional prop to handle editing an existing election
+    election?: Election | null;
 }
 
-const CreateElectionModal: React.FC<CreateElectionModalProps> = ({ isOpen, onClose, onCreateSuccess, creatorWalletAddress, election }) => {
+const CreateElectionModal: React.FC<CreateElectionModalProps> = ({
+    isOpen,
+    onClose,
+    onCreateSuccess,
+    creatorWalletAddress,
+    election,
+}) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const toast = useToast();
 
-    // Pre-fill the form if we are editing an election
+    // Reset form fields whenever the modal is opened
     useEffect(() => {
-        if (election) {
-            setTitle(election.title);
-            setDescription(election.description);
-            setStartDate(election.startDate);
-            setEndDate(election.endDate);
-        } else {
-            setTitle('');
-            setDescription('');
-            setStartDate('');
-            setEndDate('');
+        if (isOpen) {
+            if (election) {
+                // Prefill form fields when editing an election
+                setTitle(election.title);
+                setDescription(election.description);
+                setStartDate(election.startDate);
+                setEndDate(election.endDate);
+            } else {
+                // Clear form fields when creating a new election
+                setTitle('');
+                setDescription('');
+                setStartDate('');
+                setEndDate('');
+            }
+            setErrors({}); // Clear any previous errors
         }
-    }, [election]);
+    }, [isOpen, election]);
+
+    const validateFields = (): boolean => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!title.trim()) newErrors.title = 'Election name is required.';
+        if (!startDate) newErrors.startDate = 'Start date is required.';
+        if (!endDate) newErrors.endDate = 'End date is required.';
+
+        const minDate = new Date('1753-01-01');
+        const maxDate = new Date('9999-12-31');
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (startDate && (start < minDate || start > maxDate)) {
+            newErrors.startDate = 'Start date must be between 1/1/1753 and 12/31/9999.';
+        }
+
+        if (endDate && (end < minDate || end > maxDate)) {
+            newErrors.endDate = 'End date must be between 1/1/1753 and 12/31/9999.';
+        }
+
+        if (startDate && endDate && start > end) {
+            newErrors.endDate = 'End date must be after the start date.';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleCreateOrUpdateElection = async () => {
+        if (!validateFields()) return;
+
         const token = localStorage.getItem('token');
-    
         if (!token) {
             console.error('No token found. Please log in.');
             return;
         }
-    
+
         const electionData = {
             creatorId: creatorWalletAddress,
             title,
             description,
             startDate,
             endDate,
-            positions: election ? election.positions : [], // Include positions even if empty
-            joinCode: election ? election.joinCode : '', // Include join code if editing
+            positions: election ? election.positions : [],
+            joinCode: election ? election.joinCode : '',
             electionAccesses: [],
         };
-    
+
         try {
             const response = election
                 ? await fetch(`http://localhost:7122/api/election/update`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ ...electionData, electionId: election.electionId }),
-                })
+                      method: 'PUT',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ ...electionData, electionId: election.electionId }),
+                  })
                 : await fetch(`http://localhost:7122/api/election/create`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify(electionData), // Do NOT include JoinCode here
-                });
-    
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify(electionData),
+                  });
+
             if (response.ok) {
                 toast({
-                    title: election ? "Election updated successfully." : "Election created successfully.",
-                    status: "success",
+                    title: election ? 'Election updated successfully.' : 'Election created successfully.',
+                    status: 'success',
                     duration: 3000,
                     isClosable: true,
                 });
                 onCreateSuccess();
                 onClose();
             } else {
+                const errorText = await response.text();
                 toast({
-                    title: election ? "Failed to update election." : "Failed to create election.",
-                    description: await response.text(),
-                    status: "error",
+                    title: election ? 'Failed to update election.' : 'Failed to create election.',
+                    description: errorText,
+                    status: 'error',
                     duration: 3000,
                     isClosable: true,
                 });
@@ -116,9 +158,9 @@ const CreateElectionModal: React.FC<CreateElectionModalProps> = ({ isOpen, onClo
         } catch (error) {
             console.error('Error creating/updating election:', error);
             toast({
-                title: "An error occurred.",
-                description: election ? "Unable to update election." : "Unable to create election.",
-                status: "error",
+                title: 'An error occurred.',
+                description: election ? 'Unable to update election.' : 'Unable to create election.',
+                status: 'error',
                 duration: 3000,
                 isClosable: true,
             });
@@ -132,23 +174,42 @@ const CreateElectionModal: React.FC<CreateElectionModalProps> = ({ isOpen, onClo
                 <ModalHeader>{election ? 'Edit Election' : 'Create New Election'}</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody>
-                    <FormControl>
+                    <FormControl isInvalid={!!errors.title} mb={4} isRequired>
                         <FormLabel>Election Name</FormLabel>
-                        <Input placeholder="Enter election name" value={title} onChange={(e) => setTitle(e.target.value)} />
+                        <Input
+                            placeholder="Enter election name"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
+                        {errors.title && <Text color="red.500" fontSize="sm">{errors.title}</Text>}
                     </FormControl>
-                    <Flex gap={2}>
-                        <FormControl mt={4}>
+                    <Flex gap={4} flexDirection={{ base: 'column', md: 'row' }} mb={4}>
+                        <FormControl isInvalid={!!errors.startDate} isRequired>
                             <FormLabel>Start Date</FormLabel>
-                            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                            <Input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                            {errors.startDate && <Text color="red.500" fontSize="sm">{errors.startDate}</Text>}
                         </FormControl>
-                        <FormControl mt={4}>
+                        <FormControl isInvalid={!!errors.endDate} isRequired>
                             <FormLabel>End Date</FormLabel>
-                            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                            {errors.endDate && <Text color="red.500" fontSize="sm">{errors.endDate}</Text>}
                         </FormControl>
                     </Flex>
-                    <FormControl mt={4}>
+                    <FormControl>
                         <FormLabel>Description</FormLabel>
-                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+                        <Textarea
+                            placeholder="Enter election description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
                     </FormControl>
                 </ModalBody>
                 <ModalFooter>

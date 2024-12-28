@@ -1,11 +1,15 @@
-import { Button, Card, CardBody, FormControl, FormLabel, Input, VStack } from '@chakra-ui/react';
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+// ... other imports
+import { VStack, FormControl, FormLabel, Input, Button } from '@chakra-ui/react';
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Web3 from 'web3';
 
 const RegisterForm: React.FC = () => {
-    const location = useLocation();
-    const { walletAddress } = location.state as { walletAddress: string };
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Retrieve the wallet address passed from MetaMask login
+    const walletAddress = location.state?.walletAddress || '';
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -13,43 +17,79 @@ const RegisterForm: React.FC = () => {
         address: '',
         birthDate: '',
         email: '',
-        userType: '',
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prevState => ({ ...prevState, [name]: value }));
+    const [idDocument, setIdDocument] = useState<File | null>(null);
+    const [kycStatus, setKycStatus] = useState<string | null>(null);
+
+    // Handle ID upload
+    const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setIdDocument(e.target.files[0]);
+        }
+    };
+
+    // Submit the ID document for KYC verification
+    const handleKYCVerification = async () => {
+        if (!idDocument) {
+            alert("Please upload an ID document.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('idDocument', idDocument);
+
+        try {
+            const response = await fetch(`http://localhost:7122/api/user/kyc-verify?walletAddress=${walletAddress}`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const kycData = await response.json();
+                setFormData({
+                    firstName: kycData.firstName,
+                    lastName: kycData.lastName,
+                    address: kycData.address,
+                    birthDate: kycData.birthDate,
+                    email: '', // Email is manually filled
+                });
+                setKycStatus("KYC verified successfully!");
+            } else {
+                setKycStatus("KYC verification failed.");
+            }
+        } catch (error) {
+            console.error('Error during KYC verification:', error);
+            setKycStatus("Error during KYC verification.");
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+    
         const requestBody = {
             ...formData,
-            walletAddress: walletAddress,
-            nonce: "1", // Placeholder; will be replaced by the backend
-            userType: 'user'
+            walletAddress,
+            userType: 'user',
         };
-
+    
         try {
-            const response = await fetch(`http://localhost:7122/api/user/register`, {
+            const response = await fetch('http://localhost:7122/api/user/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestBody),
             });
-
+    
             if (response.ok) {
-                const registeredUser = await response.json();
-                console.log('User registered successfully:', registeredUser);
-
-                // Optionally, log the user in automatically
-                const token = await loginUser(walletAddress);
-                if (token) {
-                    localStorage.setItem('token', token); // Store JWT token
-                    navigate('/dashboard');
-                }
+                const data = await response.json();
+                localStorage.setItem('token', data.Token);
+                localStorage.setItem('refreshToken', data.RefreshToken);
+                console.log('User registered successfully:', data);
+                console.log('login1');
+                navigate('/login'); // Redirect to dashboard directly after registration and login
+                console.log('login2');
             } else {
                 console.error('Error registering user:', response.statusText);
             }
@@ -58,62 +98,43 @@ const RegisterForm: React.FC = () => {
         }
     };
 
-    // Define the loginUser function
-    const loginUser = async (walletAddress: string): Promise<string | null> => {
-        const url = `http://localhost:7122/api/user/login`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ walletAddress }), // Adjust payload if needed
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.token; // Return JWT token
-            } else {
-                console.error('Login failed:', response.statusText);
-                return null;
-            }
-        } catch (error) {
-            console.error('Error logging in user:', error);
-            return null;
-        }
-    };
-
     return (
-        <Card maxW='sm' m="auto">
-            <CardBody>
-                <VStack as="form" spacing={4} onSubmit={handleSubmit}>
-                    <FormControl id="firstName">
-                        <FormLabel>First Name</FormLabel>
-                        <Input type="text" name="firstName" value={formData.firstName} onChange={handleChange} required />
-                    </FormControl>
-                    <FormControl id="lastName">
-                        <FormLabel>Last Name</FormLabel>
-                        <Input type="text" name="lastName" value={formData.lastName} onChange={handleChange} required />
-                    </FormControl>
-                    <FormControl id="address">
-                        <FormLabel>Address</FormLabel>
-                        <Input type="text" name="address" value={formData.address} onChange={handleChange} required />
-                    </FormControl>
-                    <FormControl id="birthDate">
-                        <FormLabel>Birth Date</FormLabel>
-                        <Input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} required />
-                    </FormControl>
-                    <FormControl id="email">
-                        <FormLabel>Email</FormLabel>
-                        <Input type="email" name="email" value={formData.email} onChange={handleChange} required />
-                    </FormControl>
-                    <Button colorScheme="blue" type="submit">
-                        Register
-                    </Button>
-                </VStack>
-            </CardBody>
-        </Card>
+        <VStack as="form" spacing={4} onSubmit={handleSubmit}>
+            <FormControl id="idDocument">
+                <FormLabel>Upload ID</FormLabel>
+                <Input type="file" onChange={handleIdUpload} />
+                <Button mt={2} onClick={handleKYCVerification}>Verify ID</Button>
+                {kycStatus && <p>{kycStatus}</p>} {/* Display KYC status */}
+            </FormControl>
+            <FormControl id="firstName">
+                <FormLabel>First Name</FormLabel>
+                <Input type="text" value={formData.firstName} readOnly />
+            </FormControl>
+            <FormControl id="lastName">
+                <FormLabel>Last Name</FormLabel>
+                <Input type="text" value={formData.lastName} readOnly />
+            </FormControl>
+            <FormControl id="address">
+                <FormLabel>Address</FormLabel>
+                <Input type="text" value={formData.address} readOnly />
+            </FormControl>
+            <FormControl id="birthDate">
+                <FormLabel>Birth Date</FormLabel>
+                <Input type="date" value={formData.birthDate} readOnly />
+            </FormControl>
+            <FormControl id="email">
+                <FormLabel>Email</FormLabel>
+                <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    isRequired
+                />
+            </FormControl>
+            <Button colorScheme="blue" type="submit">
+                Register
+            </Button>
+        </VStack>
     );
 };
 

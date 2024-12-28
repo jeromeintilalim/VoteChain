@@ -2,7 +2,15 @@ import {
 	AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader,
 	AlertDialogOverlay, Box, Button, Checkbox, Flex, FormControl, FormLabel, Heading,
 	Image, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader,
-	ModalOverlay, Table, Tbody, Td, Th, Thead, Tr, useDisclosure, useToast, Skeleton, Switch, Textarea
+	ModalOverlay,
+	Skeleton, Switch,
+	Table,
+	TableCaption,
+	Tbody, Td,
+	Text,
+	Textarea,
+	Th, Thead, Tr, VStack,
+	useDisclosure, useToast
 } from '@chakra-ui/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -11,6 +19,7 @@ interface Candidate {
 	candidateId: number;
 	positionId: number;
 	name: string;
+	partylist: string;
 	details: string;
 	imageUrl: string | File;
 }
@@ -52,7 +61,16 @@ const ElectionSettingsPage: React.FC = () => {
 	const [isMultipleCandidatesAllowed, setIsMultipleCandidatesAllowed] = useState(false);
 
 	const handleMultipleCandidatesToggle = () => {
-		setIsMultipleCandidatesAllowed(!isMultipleCandidatesAllowed);
+		// setIsMultipleCandidatesAllowed(!isMultipleCandidatesAllowed);
+		setIsMultipleCandidatesAllowed((prev) => {
+			// Update the selectedPosition maxSelection when toggling off
+			if (prev) {
+				setSelectedPosition((prevPosition) =>
+					prevPosition ? { ...prevPosition, maxSelection: 1 } : null
+				);
+			}
+			return !prev; // Toggle the state
+		});
 	};
 
 	useEffect(() => {
@@ -348,8 +366,17 @@ const ElectionSettingsPage: React.FC = () => {
 	const handleAddCandidate = async () => {
 		if (!selectedCandidate || !selectedPosition || !selectedCandidate.name.trim()) {
 			toast({
-				title: 'Validation Error',
+				title: 'Candidate adding failed',
 				description: 'Candidate name is required.',
+				status: 'error',
+				duration: 3000,
+				isClosable: true,
+			});
+			return;
+		} else if (!selectedCandidate.partylist.trim()) {
+			toast({
+				title: 'Candidate adding failed',
+				description: 'Partylist is required.',
 				status: 'error',
 				duration: 3000,
 				isClosable: true,
@@ -361,6 +388,7 @@ const ElectionSettingsPage: React.FC = () => {
 			const formData = new FormData();
 			formData.append('PositionId', selectedPosition.positionId.toString());
 			formData.append('name', selectedCandidate.name);
+			formData.append('partylist', selectedCandidate.partylist);
 			formData.append('details', selectedCandidate.details);
 
 			if (imageFile) {
@@ -410,8 +438,17 @@ const ElectionSettingsPage: React.FC = () => {
 	const handleUpdateCandidate = async () => {
 		if (!selectedCandidate || !selectedCandidate.name.trim()) {
 			toast({
-				title: 'Validation Error',
+				title: 'Candidate adding failed',
 				description: 'Candidate name is required.',
+				status: 'error',
+				duration: 3000,
+				isClosable: true,
+			});
+			return;
+		} else if (!selectedCandidate.partylist.trim()) {
+			toast({
+				title: 'Candidate adding failed',
+				description: 'Partylist is required.',
 				status: 'error',
 				duration: 3000,
 				isClosable: true,
@@ -425,6 +462,7 @@ const ElectionSettingsPage: React.FC = () => {
 			formData.append('CandidateId', selectedCandidate.candidateId.toString());
 			formData.append('PositionId', selectedCandidate.positionId.toString());
 			formData.append('Name', selectedCandidate.name);
+			formData.append('Partylist', selectedCandidate.partylist);
 			formData.append('Details', selectedCandidate.details);
 
 			if (imageFile) {
@@ -524,7 +562,7 @@ const ElectionSettingsPage: React.FC = () => {
 
 	const openAddCandidateModal = (position: Position) => {
 		setSelectedPosition(position);
-		setSelectedCandidate({ candidateId: 0, positionId: position.positionId, name: '', details: '', imageUrl: '' });
+		setSelectedCandidate({ candidateId: 0, positionId: position.positionId, name: '', partylist: '', details: '', imageUrl: '' });
 		setImageFile(null); // Clear the previous image file when opening the modal
 		addCandidateModal.onOpen();
 	};
@@ -600,77 +638,86 @@ const ElectionSettingsPage: React.FC = () => {
 	};
 
 	return (
-		<Box p={8}>
-			<Flex justifyContent="space-between" mb={6}>
-				<Heading as="h1">Election Settings</Heading>
-				<Button colorScheme="blue" onClick={openAddPositionModal}>
+		<Box p={{ base: 4, md: 8 }}>
+			<Flex
+				justifyContent="space-between"
+				alignItems="center"
+				flexDirection={{ base: 'column', md: 'row' }} // Stack elements on smaller screens
+				mb={6}
+				gap={4} // Add spacing between elements in a column layout
+			>
+				<Heading as="h1" size={{ base: 'lg', md: 'xl' }}>
+					Election Settings
+				</Heading>
+				{/* <Button
+					colorScheme="blue"
+					width={{ base: '100%', md: 'auto' }} // Full-width button on smaller screens
+					onClick={openAddPositionModal}
+				>
 					Add Position
-				</Button>
+				</Button> */}
+				{positions.length > 0 ? (
+					<Button
+						color="white"
+						bgColor="#8c56ff"
+						onClick={openAddPositionModal}
+						_hover={{ bgColor: '#6937FF' }}
+					>
+						Add Position
+					</Button>
+				) : (
+					null
+				)}
 			</Flex>
-
 
 			<Box
 				p={5}
 				shadow="md"
 				borderRadius="xl"
+				overflowX="auto" // Allow horizontal scrolling for the table on smaller screens
 			>
-				<Table>
+				<Table size={{ base: 'sm', md: 'md' }} variant="simple">
 					<Thead>
 						<Tr>
-							<Th>Title</Th>
-							<Th>Description</Th>
-							<Th>Max Selections Allowed</Th>
-							<Th textAlign="center">Actions</Th>
+							<Th w="15%">Title</Th>
+							<Th w="45%">Description</Th>
+							<Th w="15%">Max Selections Allowed</Th>
+							<Th w="25%" textAlign="center">Actions</Th>
 						</Tr>
 					</Thead>
 					{loading ? (
 						<Tbody>
-							<Tr>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td display="flex" justifyContent="center">
-									<Skeleton height="20px" width="50px" mr={3} />
-									<Skeleton height="20px" width="50px" />
-								</Td>
-							</Tr>
-							<Tr>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td display="flex" justifyContent="center">
-									<Skeleton height="20px" width="50px" mr={3} />
-									<Skeleton height="20px" width="50px" />
-								</Td>
-							</Tr>
-							<Tr>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td display="flex" justifyContent="center">
-									<Skeleton height="20px" width="50px" mr={3} />
-									<Skeleton height="20px" width="50px" />
-								</Td>
-							</Tr>
+							{Array.from({ length: 3 }).map((_, index) => (
+								<Tr key={index}>
+									<Td><Skeleton height="20px" /></Td>
+									<Td><Skeleton height="20px" /></Td>
+									<Td><Skeleton height="20px" /></Td>
+									<Td>
+										<Flex justifyContent="center">
+											<Skeleton height="20px" width="50px" mr={3} />
+											<Skeleton height="20px" width="50px" />
+										</Flex>
+									</Td>
+								</Tr>
+							))}
 						</Tbody>
 					) : (
 						<Tbody>
-							{
-								positions.length > 0 ? (
-									positions.map((position) => (
-										<React.Fragment key={position.positionId}>
-											<Tr
-												onClick={() => togglePositionExpansion(position.positionId)}
-												cursor="pointer"
-												_hover={{ backgroundColor: "gray.100" }}
-											>
-												<Td>{position.title}</Td>
-												<Td>{position.description ? position.description : "No description added."}</Td>
-												<Td>{position.maxSelection}</Td>
-												<Td display="flex" justifyContent="center">
+							{positions.length > 0 ? (
+								positions.map((position) => (
+									<React.Fragment key={position.positionId}>
+										<Tr
+											onClick={() => togglePositionExpansion(position.positionId)}
+											cursor="pointer"
+											_hover={{ backgroundColor: 'gray.100' }}
+										>
+											<Td>{position.title}</Td>
+											<Td>{position.description || 'No description added.'}</Td>
+											<Td>{position.maxSelection}</Td>
+											<Td>
+												<Flex justifyContent="center" gap={2} wrap="wrap">
 													<Button
 														colorScheme="blue"
-														mr={3}
 														onClick={(e) => {
 															e.stopPropagation();
 															openEditPositionModal(position);
@@ -687,40 +734,44 @@ const ElectionSettingsPage: React.FC = () => {
 													>
 														Delete
 													</Button>
-												</Td>
-											</Tr>
+												</Flex>
+											</Td>
+										</Tr>
 
-											{position.expanded && (
-												<Tr>
-													<Td colSpan={4} bgColor="#f3efff">
-														<Table size="sm">
-															<Thead>
-																<Tr>
-																	<Th w="25%">Name</Th>
-																	<Th w="25%">Details</Th>
-																	<Th w="25%" textAlign="center">Image</Th>
-																	<Th w="25%" textAlign="center">Actions</Th>
-																</Tr>
-															</Thead>
-															<Tbody>
-																{position.candidates.length > 0 ? (
-																	position.candidates.map((candidate) => (
-																		<Tr key={candidate.candidateId}>
-																			<Td>{candidate.name}</Td>
-																			<Td>{candidate.details}</Td>
-																			<Td>
-																				<Image
-																					src={candidate.imageUrl ? `http://localhost:7122${candidate.imageUrl}` : 'http://localhost:7122/images/icon.png'}
-																					alt={candidate.name}
-																					boxSize="50px"
-																					borderRadius="4px"
-																					m="auto"
-																				/>
-																			</Td>
-																			<Td display="flex" justifyContent="center">
+										{position.expanded && (
+											<Tr>
+												<Td colSpan={4} bgColor="gray.100">
+													<Table size="sm">
+														<Thead>
+															<Tr>
+																<Th w="15%">Name</Th>
+																<Th w="15%">Partylist</Th>
+																<Th w="40%">Details</Th>
+																<Th w="15%" textAlign="center">Image</Th>
+																<Th w="15%" textAlign="center">Actions</Th>
+															</Tr>
+														</Thead>
+														<Tbody>
+															{position.candidates.length > 0 ? (
+																position.candidates.map((candidate) => (
+																	<Tr key={candidate.candidateId}>
+																		<Td>{candidate.name}</Td>
+																		<Td>{candidate.partylist}</Td>
+																		<Td>{candidate.details || "No candidate details."}</Td>
+																		<Td>
+																			<Image
+																				src={candidate.imageUrl ? `http://localhost:7122${candidate.imageUrl}` : 'http://localhost:7122/images/icon.png'}
+																				alt={candidate.name}
+																				boxSize="75px"
+																				borderRadius="4px"
+																				m="auto"
+																			/>
+																		</Td>
+																		<Td textAlign="center">
+																			<Flex justifyContent="center" gap={2} wrap="wrap">
 																				<Button
 																					colorScheme="blue"
-																					mr={3}
+																					size="sm"
 																					onClick={(e) => {
 																						e.stopPropagation();
 																						openEditCandidateModal(candidate);
@@ -730,6 +781,7 @@ const ElectionSettingsPage: React.FC = () => {
 																				</Button>
 																				<Button
 																					colorScheme="red"
+																					size="sm"
 																					onClick={(e) => {
 																						e.stopPropagation();
 																						setSelectedCandidate(candidate);
@@ -738,44 +790,65 @@ const ElectionSettingsPage: React.FC = () => {
 																				>
 																					Delete
 																				</Button>
-																			</Td>
-																		</Tr>
-																	))
-																) : (
-																	<Tr>
-																		<Td py={6} fontWeight="bold" fontSize="24">No candidates yet.</Td>
+																			</Flex>
+																		</Td>
 																	</Tr>
-																)}
-
+																))
+															) : (
 																<Tr>
-																	<Td colSpan={4}>
-																		<Button
-																			colorScheme="green"
-																			onClick={(e) => {
-																				e.stopPropagation();
-																				openAddCandidateModal(position);
-																			}}
-																		>
-																			Add Candidate
-																		</Button>
+																	<Td colSpan={5} textAlign="center">
+																		No candidates yet.
 																	</Td>
 																</Tr>
-															</Tbody>
-														</Table>
-													</Td>
-												</Tr>
-											)}
-										</React.Fragment>
-									))
-								) : (
-									<Tr>
-										<Td py={6} fontWeight="bold" fontSize="24">No positions yet.</Td>
-									</Tr>
-								)}
+															)}
+
+															<Tr>
+																<Td colSpan={5} textAlign="center">
+																	<Button
+																		colorScheme="green"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			openAddCandidateModal(position);
+																		}}
+																	>
+																		Add Candidate
+																	</Button>
+																</Td>
+															</Tr>
+														</Tbody>
+													</Table>
+												</Td>
+											</Tr>
+										)}
+									</React.Fragment>
+								))
+							) : (
+								<Tr>
+									<Td colSpan={4} textAlign="center" py={6}>
+										<VStack>
+											<Text>No positions yet.</Text>
+											<Button
+												color="white"
+												bgColor="#8c56ff"
+												onClick={openAddPositionModal}
+												_hover={{ bgColor: '#6937FF' }}
+											>
+												Add Position
+											</Button>
+										</VStack>
+									</Td>
+								</Tr>
+							)}
 						</Tbody>
 					)}
+					<TableCaption placement="bottom">
+						<VStack>
+							<Text>Click on a position to add candidates.</Text>
+							<br />
+							<Text fontWeight="bold" fontSize="lg">Election Code: {joinCode}</Text>
+						</VStack>
+					</TableCaption>
 				</Table>
-
 				{/* Add Position Modal */}
 				<Modal isOpen={addPositionModal.isOpen} onClose={addPositionModal.onClose}>
 					<ModalOverlay />
@@ -783,16 +856,19 @@ const ElectionSettingsPage: React.FC = () => {
 						<ModalHeader>Add Position</ModalHeader>
 						<ModalCloseButton />
 						<ModalBody>
-							<FormControl id="title" mb={4}>
+							<FormControl id="title" mb={4} isRequired>
 								<FormLabel>Title</FormLabel>
 								<Input
+									placeholder='Enter Position Title'
 									value={selectedPosition?.title || ''}
 									onChange={handleTitleChange}
+									required
 								/>
 							</FormControl>
 							<FormControl id="description" mb={4}>
 								<FormLabel>Description</FormLabel>
 								<Textarea
+									placeholder='Enter Position Description'
 									value={selectedPosition?.description || ''}
 									onChange={handleDescriptionChange}
 									noOfLines={5}
@@ -844,7 +920,7 @@ const ElectionSettingsPage: React.FC = () => {
 						<ModalHeader>Edit Position</ModalHeader>
 						<ModalCloseButton />
 						<ModalBody>
-							<FormControl id="title" mb={4}>
+							<FormControl id="title" mb={4} isRequired>
 								<FormLabel>Title</FormLabel>
 								<Input
 									value={selectedPosition?.title || ''}
@@ -888,18 +964,32 @@ const ElectionSettingsPage: React.FC = () => {
 						<ModalHeader>Add Candidate</ModalHeader>
 						<ModalCloseButton />
 						<ModalBody>
-							<FormControl id="name" mb={4}>
+							<FormControl id="name" mb={4} isRequired>
 								<FormLabel>Name</FormLabel>
 								<Input
+									placeholder='Enter Candidate Name'
 									value={selectedCandidate?.name || ''}
 									onChange={(e) =>
 										setSelectedCandidate((prev) => ({ ...prev!, name: e.target.value }))
 									}
+									required
+								/>
+							</FormControl>
+							<FormControl id="partylist" mb={4} isRequired>
+								<FormLabel>Partylist</FormLabel>
+								<Input
+									placeholder='Enter Candidate Partylist'
+									value={selectedCandidate?.partylist || ''}
+									onChange={(e) =>
+										setSelectedCandidate((prev) => ({ ...prev!, partylist: e.target.value }))
+									}
+									required
 								/>
 							</FormControl>
 							<FormControl id="details" mb={4}>
 								<FormLabel>Details</FormLabel>
 								<Input
+									placeholder='Enter Candidate Details (Optional)'
 									value={selectedCandidate?.details || ''}
 									onChange={(e) =>
 										setSelectedCandidate((prev) => ({ ...prev!, details: e.target.value }))
@@ -934,15 +1024,28 @@ const ElectionSettingsPage: React.FC = () => {
 							<FormControl id="name" mb={4}>
 								<FormLabel>Name</FormLabel>
 								<Input
+									placeholder='Enter Candidate Name'
 									value={selectedCandidate?.name || ''}
 									onChange={(e) =>
 										setSelectedCandidate((prev) => ({ ...prev!, name: e.target.value }))
 									}
 								/>
 							</FormControl>
+							<FormControl id="partylist" mb={4} isRequired>
+								<FormLabel>Partylist</FormLabel>
+								<Input
+									placeholder='Enter Candidate Partylist'
+									value={selectedCandidate?.partylist || ''}
+									onChange={(e) =>
+										setSelectedCandidate((prev) => ({ ...prev!, partylist: e.target.value }))
+									}
+									required
+								/>
+							</FormControl>
 							<FormControl id="details" mb={4}>
 								<FormLabel>Details</FormLabel>
 								<Input
+									placeholder='Enter Candidate Details (Optional)'
 									value={selectedCandidate?.details || ''}
 									onChange={(e) =>
 										setSelectedCandidate((prev) => ({ ...prev!, details: e.target.value }))

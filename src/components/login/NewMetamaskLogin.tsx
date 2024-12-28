@@ -1,7 +1,7 @@
 import { Button } from '@chakra-ui/react';
-import React, { useState, useEffect } from 'react';
-import Web3 from 'web3';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Web3 from 'web3';
 
 interface User {
     walletAddress: string;
@@ -27,23 +27,26 @@ const NewMetamaskLogin: React.FC = () => {
             console.error('Web3 is not initialized');
             return;
         }
-
+    
         try {
             await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-
+    
             const accounts = await web3.eth.getAccounts();
             const currentWalletAddress = accounts[0].toLowerCase();
             setWalletAddress(currentWalletAddress);
-
+    
             const userExists = await checkUserExists(currentWalletAddress);
-
+    
             if (userExists) {
                 const nonce = await fetchNonce(currentWalletAddress);
                 const signature = await signMessage(currentWalletAddress, nonce);
-
-                const token = await verifySignature(currentWalletAddress, signature);
-                if (token) {
-                    localStorage.setItem('token', token); // Store JWT token
+    
+                const tokens = await verifySignature(currentWalletAddress, signature);  // Return an object now
+    
+                if (tokens) {
+                    const { token, refreshToken } = tokens;  // Destructure from the returned object
+                    localStorage.setItem('token', token);         // Store JWT token
+                    localStorage.setItem('refreshToken', refreshToken); // Store refresh token
                     navigate('/dashboard');
                 }
             } else {
@@ -65,21 +68,17 @@ const NewMetamaskLogin: React.FC = () => {
         return await web3!.eth.personal.sign(message, walletAddress, '');
     };
 
-    const verifySignature = async (walletAddress: string, signature: string): Promise<string | null> => {
-        const response = await fetch(`http://localhost:7122/api/user/verify-nonce`, {
+    const verifySignature = async (walletAddress: string, signature: string): Promise<{ token: string, refreshToken: string } | null> => {
+        const response = await fetch('http://localhost:7122/api/user/verify-nonce', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                walletAddress: walletAddress,
-                signature: signature
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress, signature }),
         });
-
+    
         if (response.ok) {
             const data = await response.json();
-            return data.token; // Return JWT token
+            console.log('Received tokens:', data);  // Debugging step
+            return { token: data.token, refreshToken: data.refreshToken };  // Make sure refreshToken is part of the API response
         } else {
             console.error('Signature verification failed:', response.statusText);
             return null;
@@ -92,8 +91,8 @@ const NewMetamaskLogin: React.FC = () => {
     };
 
     return (
-        <Button color="white" bgColor="#6937FF" onClick={handleClick}
-            _hover={{ bgColor: "#4000ff", boxShadow: "2px 2px 16px rgb(0 0 0 / 20%)" }}>
+        <Button w="100%" color="white" bgColor="#8c56ff" onClick={handleClick}
+            _hover={{ bgColor: "#7f43ff", boxShadow: "2px 2px 16px rgb(0 0 0 / 20%)" }}>
             Login with MetaMask
         </Button>
     );

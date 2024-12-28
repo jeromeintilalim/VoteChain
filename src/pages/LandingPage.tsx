@@ -1,42 +1,30 @@
-import { Box, Button, Center, Flex, Heading, IconButton, Stack, Text } from "@chakra-ui/react";
+import { Box, Card, Center, Flex, Heading, Stack, Text, useBreakpointValue } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from 'react';
 import { FaEthereum } from "react-icons/fa";
-import LoginPage from "./LoginPage";
-import RegisterPage from "./RegisterPage";
-import { MdKeyboardArrowLeft } from "react-icons/md";
 import NewMetamaskLogin from './../components/login/NewMetamaskLogin';
 
 const LandingPage = () => {
-    const [activeForm, setActiveForm] = useState(''); // State to track which form is active
-
-    const handleButtonClick = (formType: string) => {
-        setActiveForm(formType);
-    };
-
-    const handleBackButtonClick = () => {
-        setActiveForm('');
-    };
-
     const formVariants = {
         hidden: { x: "100%", opacity: 0 },
         visible: { x: 0, opacity: 1 },
         exit: { x: "-100%", opacity: 0 },
     };
 
-    const transition = { duration: "0.2", ease: "linear" }; // Faster transition
+    // Simplified transition without explicit typing
+    const transition = { duration: "0.2", ease: "linear" };
+
+    const iconFontSize = useBreakpointValue({ base: "150px", md: "300px" });
 
     return (
-        <Flex direction={['column', 'row']}>
-            {/* Left Side */}
-            <Center w='50%' h='100vh' bg='#6937FF'>
-                <FaEthereum color="white" fontSize="300px" />
+        <Flex direction={{ base: 'column', md: 'row' }} minH="100vh">
+            {/* Left Side: Ethereum Logo */}
+            <Center display={{ base: 'none', md: 'flex' }} w={{ base: '100%', md: '50%' }} h={{ base: '40vh', md: '100vh' }} bg="linear-gradient(145deg, #8C56FF, #6937FF)">
+                <FaEthereum color="white" fontSize={iconFontSize} />
             </Center>
 
-            {/* Right Side */}
-            <Box w='50%' h='100vh' bg='white' p="0" overflow="hidden">
+            {/* Right Side: Content */}
+            <Box w={{ base: '100%', md: '50%' }} h={{ base: '100vh', md: '100vh' }} bg={{ base: "#774aff", md: "white" }} p={{ base: 4, md: 8 }} overflow="hidden">
                 <AnimatePresence mode="wait">
-                    {/* {activeForm === '' && ( */}
                     <Center
                         key="main"
                         as={motion.div}
@@ -44,108 +32,36 @@ const LandingPage = () => {
                         animate="visible"
                         exit="exit"
                         variants={formVariants}
-                        transition={transition}
-                        w='100%'
-                        h='100%'
+                        transition={transition} // Simplified transition
+                        w="100%"
+                        h="100%"
+                        display={{ base: 'block', md: 'flex' }}
                     >
-                        <Stack>
-                            <Heading fontWeight="800" fontSize="54px">Welcome to <Text as="span" color="#6937FF" fontStyle="italic">VoteChain</Text></Heading>
-                            {/* <Stack direction='row' justifyContent="space-evenly">
-                                    <Button
-                                        p="32px"
-                                        w="45%"
-                                        fontSize="28px"
-                                        backgroundColor='#6937FF'
-                                        color="white"
-                                        size='lg'
-                                        borderRadius="0"
-                                        _hover={{ backgroundColor: "#5126d1" }}
-                                        boxShadow="2xl"
-                                        onClick={() => handleButtonClick('vote')}
-                                    >
-                                        Log in
-                                    </Button>
-                                    <Button
-                                        p="27px"
-                                        w="45%"
-                                        fontSize="32px"
-                                        backgroundColor='white'
-                                        color="#6937FF"
-                                        border="5px solid #6937FF"
-                                        borderRadius="0"
-                                        size='lg'
-                                        variant="outline"
-                                        _hover={{ backgroundColor: "#f4efff" }}
-                                        boxShadow="2xl"
-                                        onClick={() => handleButtonClick('register')}
-                                    >
-                                        Register
-                                    </Button>
-                                </Stack> */}
+                        <Center display={{ base: 'flex', md: 'none' }} w={{ base: '100%', md: '50%' }} bgColor="transparent" h={{ base: '40vh', md: '100vh' }}>
+                            <FaEthereum color="white" fontSize={iconFontSize} />
+                        </Center>
+                        <Card p="6"
+                            display={{ base: 'block', md: 'none' }}>
+                            <Stack align="center" textAlign="center">
+                                <Heading fontWeight="700" fontSize={{ base: "2xl", md: "5xl" }}>
+                                    Welcome to{" "}
+                                    <Text as="span" color="#8C56FF" fontStyle="italic">
+                                        VoteChain
+                                    </Text>
+                                </Heading>
+                                <NewMetamaskLogin />
+                            </Stack>
+                        </Card>
+                        <Stack display={{ base: 'none', md: 'block' }} align="center" textAlign="center">
+                            <Heading fontWeight="800" fontSize={{ base: "2xl", md: "5xl" }}>
+                                Welcome to{" "}
+                                <Text as="span" color="#8c56ff" fontStyle="italic">
+                                    VoteChain
+                                </Text>
+                            </Heading>
                             <NewMetamaskLogin />
                         </Stack>
                     </Center>
-                    {/* )} */}
-
-                    {/* {activeForm === 'vote' && (
-                        <Center
-                            key="vote"
-                            as={motion.div}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            variants={formVariants}
-                            transition={transition}
-                            w='100%'
-                            h='100%'
-                        >
-                            <Box w="100%">
-                                <IconButton
-                                    icon={<MdKeyboardArrowLeft />}
-                                    onClick={handleBackButtonClick}
-                                    aria-label="Back"
-                                    position="absolute"
-                                    top="4"
-                                    left="4"
-                                    fontSize="48px"
-                                    backgroundColor="#6937FF"
-                                    color="white"
-                                    _hover={{ backgroundColor: "#5126d1" }}
-                                />
-                                <LoginPage onRegisterClick={() => handleButtonClick('register')} />
-                            </Box>
-                        </Center>
-                    )} 
-
-                    {activeForm === 'register' && (
-                        <Center
-                            key="register"
-                            as={motion.div}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            variants={formVariants}
-                            transition={transition}
-                            w='100%'
-                            h='100%'
-                        >
-                            <Box w="100%">
-                                <IconButton
-                                    icon={<MdKeyboardArrowLeft />}
-                                    onClick={handleBackButtonClick}
-                                    aria-label="Back"
-                                    position="absolute"
-                                    top="4"
-                                    left="4"
-                                    fontSize="48px"
-                                    backgroundColor="#6937FF"
-                                    color="white"
-                                    _hover={{ backgroundColor: "#5126d1" }}
-                                />
-                                <RegisterPage onLoginClick={() => handleButtonClick('vote')} />
-                            </Box>
-                        </Center>
-                    )} */}
                 </AnimatePresence>
             </Box>
         </Flex>

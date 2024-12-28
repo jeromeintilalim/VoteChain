@@ -15,20 +15,20 @@
 ///////////////////// GPT //////////////////////
 1. Authentication & Authorization
     User Registration:
-    [ ] - Ensure users can register with MetaMask.
-    [ ] - Verify that a unique Nonce is generated and stored.
+    [X] - Ensure users can register with MetaMask.
+    [X] - Verify that a unique Nonce is generated and stored.
     [ ] - Validate user input (e.g., email, birthdate) during registration.
     [ ] - Ensure the backend handles duplicate registrations appropriately.
 
     Login Flow:
-    [ ] - Check if users can log in via MetaMask and sign the nonce.
-    [ ] - Verify that the backend correctly verifies the signed nonce.
-    [ ] - Ensure JWT token generation after successful login.
-    [ ] - Implement session management (e.g., JWT token expiry, refresh tokens).
+    [X] - Check if users can log in via MetaMask and sign the nonce.
+    [X] - Verify that the backend correctly verifies the signed nonce.
+    [X] - Ensure JWT token generation after successful login.
+    [X] - Implement session management (e.g., JWT token expiry, refresh tokens).
 
     Authorization:
     [ ] - Implement role-based access control (e.g., user, admin).
-    [ ] - Ensure protected routes are only accessible by authorized users.
+    [X] - Ensure protected routes are only accessible by authorized users.
 
     Logout:
     [ ] - Ensure users can log out and invalidate their session.
@@ -36,29 +36,30 @@
 
 2. Front-End Functionality
     MetaMask Integration:
-    [ ] - Ensure MetaMask is detected and integrated properly.
+    [X] - Ensure MetaMask is detected and integrated properly.
     [ ] - Check for account change events and update the UI accordingly.
     [ ] - Provide feedback if MetaMask is not detected.
 
     Forms & Data Handling:
-    [ ] - Validate form inputs (e.g., required fields, correct formats).
-    [ ] - Implement proper error handling and display error messages to the user.
-    [ ] - Ensure form data is sent correctly to the backend.
+    [X] - Validate form inputs (e.g., required fields, correct formats).
+    [X] - Implement proper error handling and display error messages to the user.
+    [X] - Ensure form data is sent correctly to the backend.
 
     User Interface (UI):
     [ ] - Ensure a consistent and responsive design across devices.
-    [ ] - Provide visual feedback (e.g., loading indicators, success messages).
+    [X] - Provide visual feedback (e.g., loading indicators, success messages).
     [ ] - Ensure accessibility (e.g., ARIA labels, keyboard navigation).
 
     Navigation:
-    [ ] - Ensure navigation between pages is smooth and maintains state.
-    [ ] - Implement redirects after successful login, registration, or logout.
-    [ ] - Handle unauthorized access with proper redirects (e.g., to login page).
+    [X] - Ensure navigation between pages is smooth and maintains state.
+    [X] - Implement redirects after successful login, registration, or logout.
+    [X] - Handle unauthorized access with proper redirects (e.g., to login page).
 
     Dashboard:
     [ ] - Display user-specific information (e.g., profile details, account balance).
     [ ] - Implement features like viewing and editing profile data.
-    [ ] - Ensure data is fetched and displayed correctly from the backend.
+    [X] - Ensure data is fetched and displayed correctly from the backend.
+
 3. Back-End Services
     API Endpoints:
     [ ] - Ensure all API endpoints are functioning as expected.

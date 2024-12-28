@@ -1,12 +1,12 @@
 import {
-    Flex,
     Box,
-    Input,
-    Checkbox,
-    Stack,
-    Link,
     Button,
+    Checkbox,
+    Flex,
     Heading,
+    Input,
+    Link,
+    Stack,
     Text,
     useColorModeValue,
 } from '@chakra-ui/react';
@@ -25,16 +25,16 @@ export default function LoginPage({ onRegisterClick }: { onRegisterClick: () => 
                         <Stack spacing={10}>
                             <Stack direction={{ base: 'column', sm: 'row' }} align={'start'} justify={'space-between'}>
                                 <Checkbox iconColor='white' _checked={{
-                                    "& .chakra-checkbox__control": { background: "#6937FF", borderColor: "#6937FF" }
+                                    "& .chakra-checkbox__control": { background: "#8C56FF", borderColor: "#8C56FF" }
                                 }}   >Remember me</Checkbox>
-                                <Link color={'#6937FF'}>Forgot password?</Link>
+                                <Link color={'#8C56FF'}>Forgot password?</Link>
                             </Stack>
-                            <Button bg={'#6937FF'} color={'white'} _hover={{ backgroundColor: "#5126d1" }}>
+                            <Button bg={'#8C56FF'} color={'white'} _hover={{ backgroundColor: "#5126d1" }}>
                                 Sign in
                             </Button>
                             <Stack pt={6}>
                                 <Text align={'center'}>
-                                    Not a voter yet? <Link color={'#6937FF'} onClick={onRegisterClick}>Register</Link>
+                                    Not a voter yet? <Link color={'#8C56FF'} onClick={onRegisterClick}>Register</Link>
                                 </Text>
                             </Stack>
                         </Stack>

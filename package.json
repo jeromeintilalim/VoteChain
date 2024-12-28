@@ -14,7 +14,15 @@
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@highcharts/dashboards": "^3.0.0",
+    "bn.js": "^2.0.3",
+    "browser-image-compression": "^2.0.2",
+    "circomlib": "^2.0.5",
     "framer-motion": "^11.2.10",
+    "highcharts-react-official": "^3.2.1",
+    "jwt-decode": "^4.0.0",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.4.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
@@ -24,6 +32,7 @@
     "web3": "^4.11.1"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.1.6",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",

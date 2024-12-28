@@ -1,32 +1,34 @@
-import React, { useEffect, useState } from 'react';
 import {
+	AlertDialog,
+	AlertDialogBody,
+	AlertDialogContent,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogOverlay,
 	Box,
 	Button,
 	Flex,
 	Heading,
+	Skeleton,
 	Table,
+	TableCaption,
 	Tbody,
 	Td,
+	Text,
 	Th,
 	Thead,
+	Tooltip,
 	Tr,
+	VStack,
 	useColorModeValue,
 	useDisclosure,
-	AlertDialog,
-	AlertDialogBody,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogContent,
-	AlertDialogOverlay,
-	Input,
-	FormControl,
-	FormLabel,
-	Skeleton,
-	useToast,
+	useToast
 } from '@chakra-ui/react';
-import { Link, useNavigate } from 'react-router-dom';
-import CreateElectionModal from './components/CreateElectionModal';
+import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Web3 from 'web3';
+import CreateElectionModal from './components/CreateElectionModal';
 
 interface Election {
 	electionId: number;
@@ -51,9 +53,24 @@ const CreatorElectionsManagementPage = () => {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		fetchMyElections();
-		initWeb3();
-	}, []);
+		const token = localStorage.getItem('token');
+
+		if (token) {
+			const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
+			const currentTime = Math.floor(Date.now() / 1000);
+
+			if (decodedToken.exp && decodedToken.exp < currentTime) {
+				console.error('Token expired. Redirecting to login.');
+				navigate('/login');
+			} else {
+				fetchMyElections();
+				initWeb3();
+			}
+		} else {
+			console.error('No token found. Redirecting to login.');
+			navigate('/login');
+		}
+	}, [navigate]);
 
 	const initWeb3 = async () => {
 		if ((window as any).ethereum) {
@@ -69,7 +86,6 @@ const CreatorElectionsManagementPage = () => {
 		setLoading(true);
 		const token = localStorage.getItem('token');
 		if (!token) {
-			console.error('No token found. Please log in.');
 			navigate('/login');
 			return;
 		}
@@ -77,33 +93,30 @@ const CreatorElectionsManagementPage = () => {
 		try {
 			const response = await fetch('http://localhost:7122/api/election/userElections', {
 				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-				},
+				headers: { Authorization: `Bearer ${token}` },
 			});
 
 			if (response.ok) {
 				const data = await response.json();
 				setElections(data);
 			} else {
-				console.error('Failed to fetch elections');
+				console.error('Failed to fetch elections.');
 			}
 		} catch (error) {
 			console.error('Error fetching elections:', error);
 		} finally {
-			setLoading(false); // End loading
+			setLoading(false);
 		}
 	};
 
-
 	const handleEditElection = (election: Election) => {
 		setSelectedElection(election);
-		setModalOpen(true); // Reuse the modal for editing
+		setModalOpen(true);
 	};
 
 	const handleDeleteElection = (election: Election) => {
 		setSelectedElection(election);
-		onOpen(); // Open the confirmation dialog
+		onOpen();
 	};
 
 	const confirmDeleteElection = async () => {
@@ -111,7 +124,6 @@ const CreatorElectionsManagementPage = () => {
 
 		const token = localStorage.getItem('token');
 		if (!token) {
-			console.error('No token found. Redirecting to login.');
 			navigate('/login');
 			return;
 		}
@@ -119,38 +131,56 @@ const CreatorElectionsManagementPage = () => {
 		try {
 			const response = await fetch(`http://localhost:7122/api/election/delete/${selectedElection.electionId}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+				headers: { Authorization: `Bearer ${token}` },
 			});
 
 			if (response.ok) {
-				toast({ title: 'Election deleted successfully.', status: 'success', duration: 3000, isClosable: true });
-				fetchMyElections(); // Refresh the list after deletion
-				onClose(); // Close the confirmation dialog
+				toast({ title: 'Election deleted successfully.', status: 'success', duration: 3000 });
+				fetchMyElections();
+				onClose();
 			} else {
-				toast({ title: 'Failed to delete election.', status: 'error', duration: 3000, isClosable: true });
+				toast({ title: 'Failed to delete election.', status: 'error', duration: 3000 });
 			}
 		} catch (error) {
-			toast({ title: 'Error deleting election.', status: 'error', duration: 3000, isClosable: true });
+			toast({ title: 'Error deleting election.', status: 'error', duration: 3000 });
 		}
 	};
 
 	const handleModalClose = () => {
 		setModalOpen(false);
-		setSelectedElection(null); // Reset the selected election
-		fetchMyElections(); // Refresh the elections list after creating or updating
+		setSelectedElection(null);
+		fetchMyElections();
 	};
 
 	return (
-		<Box p={8}>
-			<Flex>
-				<Heading as="h1" mb={6}>
+		<Box
+			p={{ base: 4, md: 8 }}
+			as={motion.div}
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+		>
+			<Flex
+				justifyContent="space-between"
+				alignItems="center"
+				flexDirection={{ base: 'column', md: 'row' }} // Stack elements on smaller screens
+				mb={6}
+				gap={4} // Add spacing between elements in a column layout
+			>
+				<Heading as="h1" size={{ base: 'lg', md: 'xl' }}>
 					Manage Elections
 				</Heading>
-				<Button colorScheme="blue" ml="auto" onClick={() => setModalOpen(true)}>
-					Create Election
-				</Button>
+				{elections.length > 0 ? (
+					<Button
+						color="white"
+						bgColor="#8c56ff"
+						onClick={() => setModalOpen(true)}
+						_hover={{ bgColor: '#6937FF' }}
+					>
+						Create Election
+					</Button>
+				) : (
+					null
+				)}
 			</Flex>
 			<Box
 				p={5}
@@ -158,89 +188,92 @@ const CreatorElectionsManagementPage = () => {
 				border="1px solid"
 				borderColor={useColorModeValue('gray.200', 'gray.700')}
 				borderRadius="md"
+				overflowX="auto" // Make the table scrollable horizontally
 			>
 				<Table variant="simple">
 					<Thead>
 						<Tr>
-							<Th>Title</Th>
-							<Th>Start Date</Th>
-							<Th>End Date</Th>
-							<Th textAlign="center">Actions</Th>
+							<Th w="15%">Title</Th>
+							<Th w="15%">Start Date</Th>
+							<Th w="15%">End Date</Th>
+							<Th w="40%">Description</Th>
+							<Th w="15%" textAlign="center">Actions</Th>
 						</Tr>
 					</Thead>
 					{loading ? (
 						<Tbody>
-							<Tr>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td display="flex" justifyContent="center">
-									<Skeleton height="20px" width="50px" mr={3} />
-									<Skeleton height="20px" width="50px" />
-								</Td>
-							</Tr>
-							<Tr>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td display="flex" justifyContent="center">
-									<Skeleton height="20px" width="50px" mr={3} />
-									<Skeleton height="20px" width="50px" />
-								</Td>
-							</Tr>
-							<Tr>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td><Skeleton height="20px" my="10px" /></Td>
-								<Td display="flex" justifyContent="center">
-									<Skeleton height="20px" width="50px" mr={3} />
-									<Skeleton height="20px" width="50px" />
-								</Td>
-							</Tr>
+							{Array(3)
+								.fill('')
+								.map((_, index) => (
+									<Tr key={index}>
+										<Td><Skeleton height="20px" /></Td>
+										<Td><Skeleton height="20px" /></Td>
+										<Td><Skeleton height="20px" /></Td>
+										<Td><Skeleton height="20px" width="80px" /></Td>
+									</Tr>
+								))}
+						</Tbody>
+					) : elections.length > 0 ? (
+						<Tbody>
+							{elections.map((election) => (
+								<Tr
+									key={election.electionId}
+									onClick={() => navigate(`/elections/${election.joinCode}`)}
+									_hover={{ cursor: 'pointer', bg: 'gray.100' }}
+								>
+									<Td>{election.title}</Td>
+									<Td>{new Date(election.startDate).toLocaleDateString()}</Td>
+									<Td>{new Date(election.endDate).toLocaleDateString()}</Td>
+									{election.description ?
+										<Td>{election.description}</Td>
+										:
+										<Td fontStyle="italic">{election.description || "No election details."}</Td>
+									}
+									<Td textAlign="center">
+										<Flex justifyContent="center" gap={2} wrap="wrap">
+											<Button
+												colorScheme="blue"
+												mr={3}
+												onClick={(e) => {
+													e.stopPropagation();
+													handleEditElection(election);
+												}}
+											>
+												Edit
+											</Button>
+											<Button
+												colorScheme="red"
+												onClick={(e) => {
+													e.stopPropagation();
+													handleDeleteElection(election);
+												}}
+											>
+												Delete
+											</Button>
+										</Flex>
+									</Td>
+								</Tr>
+							))}
 						</Tbody>
 					) : (
 						<Tbody>
-							{
-								elections.length > 0 ? (
-									elections.map((election) => (
-										<Tr
-											key={election.electionId}
-											onClick={() => navigate(`/elections/${election.joinCode}`)} // Use the navigate function from React Router
-											_hover={{ cursor: "pointer", backgroundColor: "gray.100" }} // Add some hover effects
-										>
-											<Td>{election.title}</Td>
-											<Td>{new Date(election.startDate).toLocaleString()}</Td>
-											<Td>{new Date(election.endDate).toLocaleString()}</Td>
-											<Td display="flex" justifyContent="center">
-												<Button
-													colorScheme="blue"
-													mr={3}
-													onClick={(e) => {
-														e.stopPropagation(); // Prevent the click event from propagating to the Tr
-														handleEditElection(election);
-													}}
-												>
-													Edit
-												</Button>
-												<Button
-													colorScheme="red"
-													onClick={(e) => {
-														e.stopPropagation(); // Prevent the click event from propagating to the Tr
-														handleDeleteElection(election);
-													}}
-												>
-													Delete
-												</Button>
-											</Td>
-										</Tr>
-									))
-								) : (
-									<Tr>
-										<Td py={6} fontWeight="bold" fontSize="24">No Elections yet.</Td>
-									</Tr>
-								)}
+							<Tr>
+								<Td colSpan={5} textAlign="center">
+									<VStack>
+										<Text>No Elections yet.</Text>
+										<Button
+											color="white"
+											bgColor="#8c56ff"
+											onClick={() => setModalOpen(true)}
+											_hover={{ bgColor: '#6937FF' }}>
+											Create Election
+										</Button>
+									</VStack>
+								</Td>
+							</Tr>
 						</Tbody>
 					)}
+					<TableCaption>Click on an election to manage positions.</TableCaption>
 				</Table>
 			</Box>
 			<CreateElectionModal
@@ -248,25 +281,18 @@ const CreatorElectionsManagementPage = () => {
 				onClose={handleModalClose}
 				onCreateSuccess={handleModalClose}
 				creatorWalletAddress={walletAddress}
-				election={selectedElection} // Pass the selected election for editing
+				election={selectedElection}
 			/>
 
-			{/* Delete Confirmation Modal */}
-			<AlertDialog
-				isOpen={isOpen}
-				leastDestructiveRef={cancelRef}
-				onClose={onClose}
-			>
+			<AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
 				<AlertDialogOverlay>
 					<AlertDialogContent>
 						<AlertDialogHeader fontSize="lg" fontWeight="bold">
 							Delete Election
 						</AlertDialogHeader>
-
 						<AlertDialogBody>
 							Are you sure you want to delete the election "{selectedElection?.title}"? This action cannot be undone.
 						</AlertDialogBody>
-
 						<AlertDialogFooter>
 							<Button ref={cancelRef} onClick={onClose}>
 								Cancel

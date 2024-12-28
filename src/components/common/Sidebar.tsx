@@ -1,21 +1,28 @@
 import {
 	Box,
+	Button,
 	CloseButton,
 	Drawer,
 	DrawerContent,
 	Flex,
 	Icon,
 	IconButton,
+	Modal,
+	ModalBody,
+	ModalCloseButton,
+	ModalContent,
+	ModalFooter,
+	ModalHeader,
+	ModalOverlay,
 	Text,
 	useColorModeValue,
 	useDisclosure,
-	Button,
 } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 import { IconType } from 'react-icons';
-import { FaDropbox, FaVoteYea, FaUserCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaDropbox, FaSignOutAlt, FaUserCog, FaVoteYea } from 'react-icons/fa';
 import { FiHome, FiMenu } from 'react-icons/fi';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 interface LinkItemProps {
 	name: string;
@@ -23,6 +30,7 @@ interface LinkItemProps {
 	to: string;
 }
 
+// Sidebar link items
 const LinkItems: Array<LinkItemProps> = [
 	{ name: 'Home', icon: FiHome, to: '/dashboard' },
 	{ name: 'My Elections', icon: FaVoteYea, to: '/elections' },
@@ -52,24 +60,39 @@ export default function Sidebar({ children }: { children: ReactNode }) {
 				</DrawerContent>
 			</Drawer>
 			<MobileNav display={{ base: 'flex', md: 'none' }} onOpen={onOpen} />
-			<Box ml={{ base: 0, md: '288px' }} p="4">
+			<Box ml={{ base: 0, md: '288px' }}>
 				{children}
 			</Box>
 		</Box>
 	);
 }
 
+// Sidebar content (nav links and account actions)
 interface SidebarProps {
 	onClose: () => void;
 	display?: { base: string; md: string };
 }
 
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
+	const navigate = useNavigate();
+	const {
+		isOpen: isLogoutModalOpen,
+		onOpen: onOpenLogoutModal,
+		onClose: onCloseLogoutModal,
+	} = useDisclosure();
+
+	const handleLogout = () => {
+		// Clear the token from localStorage
+		localStorage.removeItem('token');
+		// Redirect to the login page
+		navigate('/login');
+	};
+
 	return (
 		<Flex
 			direction="column"
 			justifyContent="space-between"
-			bg="linear-gradient(145deg, #4a3b9b, #6d58d1)"
+			bg="linear-gradient(145deg, #4c20c4, #6d3ce1)"
 			borderRight="1px"
 			borderRightColor={useColorModeValue('gray.200', 'gray.700')}
 			w={{ base: 'full', md: '288px' }}
@@ -81,22 +104,23 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 				<Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
 					<Text
 						color="white"
-						fontSize="2xl"
-						fontFamily="monospace"
+						fontSize="3xl"
+						fontFamily="Poppins"
 						fontWeight="bold"
+						fontStyle="italic"
 					>
-						Logo
+						VoteChain
 					</Text>
 					<CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />
 				</Flex>
 				{LinkItems.map((link) => (
-					<NavItem as={RouterLink} to={link.to} key={link.name} icon={link.icon}>
+					<NavItem as={RouterLink} to={link.to} key={link.name} icon={link.icon} onClose={onClose}>
 						{link.name}
 					</NavItem>
 				))}
 			</Box>
 			<Box height="15%">  {/* Ensures that this section stays at the bottom */}
-				<NavItem as={RouterLink} to="/account-settings" icon={FaUserCog}>
+				<NavItem as={RouterLink} to="/accountsettings" icon={FaUserCog}>
 					Account Settings
 				</NavItem>
 				<Flex px={4} mt="2">
@@ -104,26 +128,54 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 						w="full"
 						colorScheme="red"
 						leftIcon={<FaSignOutAlt />}
-						onClick={() => {
-							// Handle logout logic here
-						}}
+						onClick={onOpenLogoutModal}  // Open confirmation modal
 					>
 						Logout
 					</Button>
 				</Flex>
 			</Box>
+
+			{/* Logout Confirmation Modal */}
+			<Modal isOpen={isLogoutModalOpen} onClose={onCloseLogoutModal}>
+				<ModalOverlay />
+				<ModalContent>
+					<ModalHeader>Confirm Logout</ModalHeader>
+					<ModalCloseButton />
+					<ModalBody>
+						<Text>Are you sure you want to log out?</Text>
+					</ModalBody>
+					<ModalFooter>
+						<Button colorScheme="red" mr={3} onClick={handleLogout}>
+							Logout
+						</Button>
+						<Button variant="ghost" onClick={onCloseLogoutModal}>
+							Cancel
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
 		</Flex>
 	);
 };
 
+// Navigation Item
 interface NavItemProps {
 	icon: IconType;
 	children: string;
 	to?: string;
 	as?: any;
+	onClose?: () => void; // Add this property
 }
 
-const NavItem = ({ icon, children, ...rest }: NavItemProps) => {
+const NavItem = ({ icon, children, to, as, ...rest }: NavItemProps) => {
+	const navigate = useNavigate(); // Hook for navigation
+	const { onClose } = rest; // Get the onClose function from the props
+
+	const handleClick = () => {
+		if (onClose) onClose(); // Close the sidebar
+		if (to) navigate(to); // Navigate to the destination
+	};
+
 	return (
 		<Flex
 			align="center"
@@ -137,6 +189,7 @@ const NavItem = ({ icon, children, ...rest }: NavItemProps) => {
 				bg: 'sidebar.hover',
 				bgColor: '#51419d',
 			}}
+			onClick={handleClick} // Close sidebar and navigate
 			{...rest}
 		>
 			{icon && (
@@ -154,6 +207,7 @@ const NavItem = ({ icon, children, ...rest }: NavItemProps) => {
 	);
 };
 
+// Mobile Navigation for small screens
 interface MobileProps {
 	onOpen: () => void;
 	display: { base: string; md: string };
@@ -179,8 +233,16 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
 				icon={<FiMenu />}
 			/>
 
-			<Text fontSize="2xl" ml="8" fontFamily="monospace" fontWeight="bold">
+			{/* <Text fontSize="2xl" fontFamily="monospace" fontWeight="bold">
 				Logo
+			</Text> */}
+			<Text ml="4"
+				fontSize="3xl"
+				fontFamily="Poppins"
+				fontWeight="bold"
+				fontStyle="italic"
+			>
+				VoteChain
 			</Text>
 		</Flex>
 	);

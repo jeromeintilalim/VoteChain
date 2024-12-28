@@ -3,19 +3,21 @@ import {
     Button,
     Center,
     Flex,
+    FormLabel,
     HStack,
     Heading,
     Input,
+    Spinner,
     Stack,
     useColorModeValue
 } from '@chakra-ui/react';
+import imageCompression from 'browser-image-compression';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { FaEthereum } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function RegisterPage() {
-
     const location = useLocation();
     const { walletAddress } = location.state as { walletAddress: string };
     const navigate = useNavigate();
@@ -26,8 +28,112 @@ export default function RegisterPage() {
         address: '',
         birthDate: '',
         email: '',
-        userType: '',
     });
+
+    const [idDocument, setIdDocument] = useState<File | null>(null);
+    const [selfie, setSelfie] = useState<File | null>(null); // Selfie state
+    const [kycStatus, setKycStatus] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false); // Add loading state
+
+    // Utility function to capitalize the first letter of each word
+    const capitalizeWords = (str: string): string => {
+        return str
+            .toLowerCase() // Convert the whole string to lowercase first
+            .split(' ') // Split by space to get individual words
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
+            .join(' '); // Join words back together
+    };
+
+    // Utility function to sanitize and capitalize addresses
+    const sanitizeAddress = (address: string): string => {
+        return address
+            .replace(/[^a-zA-Z0-9\s,]/g, '') // Remove non-alphanumeric or space/comma characters
+            .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+            .trim() // Trim leading/trailing spaces
+            .split(' ') // Split address into individual words
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter
+            .join(' '); // Join words back together
+    };
+
+    const handleIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            try {
+                const compressedFile = await compressImage(file);  // Compress the image
+                setIdDocument(compressedFile);  // Set the compressed file to state
+            } catch (error) {
+                console.error("Error compressing ID document:", error);
+            }
+        }
+    };
+
+    const handleSelfieUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            try {
+                const compressedFile = await compressImage(file);  // Compress the image
+                setSelfie(compressedFile);  // Set the compressed file to state
+            } catch (error) {
+                console.error("Error compressing selfie:", error);
+            }
+        }
+    };
+
+    // Image compression helper function
+    const compressImage = async (file: File) => {
+        const options = {
+            maxSizeMB: 1,  // Maximum file size in MB
+            maxWidthOrHeight: 1024,  // Max width/height of the image
+            useWebWorker: true,  // Use web worker for better performance
+        };
+        try {
+            const compressedFile = await imageCompression(file, options);
+            return compressedFile;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    // Updated KYC submission with better error logging
+    const handleKYCVerification = async () => {
+        if (!idDocument || !selfie) {
+            alert("Please upload both an ID document and a selfie.");
+            return;
+        }
+
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('IdDocument', idDocument); // Use key as defined in backend model
+        formData.append('Selfie', selfie); // Use key as defined in backend model
+        formData.append('WalletAddress', walletAddress); // Include wallet address
+
+        const options = {
+            method: 'POST',
+            body: formData,
+        };
+
+        try {
+            const response = await fetch(`http://localhost:7122/api/user/kyc-verify`, options);
+            const result = await response.json();
+
+            if (response.ok) {
+                setKycStatus("KYC and selfie verified successfully!");
+            } else {
+                // Display detailed error message from the backend response
+                console.error("Backend Response:", result);
+                setKycStatus(result.message || "KYC or selfie verification failed.");
+            }
+        } catch (error) {
+            // Log error details to help debugging
+            console.error('Error during KYC verification:', error);
+            setKycStatus("Error during KYC verification.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const goToLogin = () => navigate('/login');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -39,9 +145,8 @@ export default function RegisterPage() {
 
         const requestBody = {
             ...formData,
-            walletAddress: walletAddress,
-            nonce: "1", // Placeholder; will be replaced by the backend
-            userType: 'user'
+            walletAddress,
+            userType: 'user',
         };
 
         try {
@@ -56,43 +161,13 @@ export default function RegisterPage() {
             if (response.ok) {
                 const registeredUser = await response.json();
                 console.log('User registered successfully:', registeredUser);
-
-                // Optionally, log the user in automatically
-                const token = await loginUser(walletAddress);
-                if (token) {
-                    localStorage.setItem('token', token); // Store JWT token
-                    navigate('/dashboard');
-                }
+                // Redirect the user to the login page
+                navigate('/login');
             } else {
                 console.error('Error registering user:', response.statusText);
             }
         } catch (error) {
             console.error('Error registering user:', error);
-        }
-    };
-
-    const loginUser = async (walletAddress: string): Promise<string | null> => {
-        const url = `http://localhost:7122/api/user/login`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ walletAddress }), // Adjust payload if needed
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.token; // Return JWT token
-            } else {
-                console.error('Login failed:', response.statusText);
-                return null;
-            }
-        } catch (error) {
-            console.error('Error logging in user:', error);
-            return null;
         }
     };
 
@@ -107,7 +182,7 @@ export default function RegisterPage() {
     return (
         <Flex direction={['column', 'row']}>
             {/* Left Side */}
-            <Center w='50%' h='100vh' bg='#6937FF'>
+            <Center w='50%' h='100vh' bg='#8C56FF'>
                 <FaEthereum color="white" fontSize="300px" />
             </Center>
 
@@ -126,7 +201,7 @@ export default function RegisterPage() {
                         h='100%'
                     >
                         <Flex align={'center'} justify={'center'}>
-                            <Stack spacing={8} mx={'auto'} maxW={'lg'} py={12} px={6}>
+                            <Stack mx={'auto'} maxW={'lg'} py={12} px={6}>
                                 <Stack align={'center'}>
                                     <Heading fontSize={'4xl'} textAlign={'center'}>
                                         Sign up
@@ -134,13 +209,49 @@ export default function RegisterPage() {
                                 </Stack>
                                 <Box rounded={'lg'} bg={useColorModeValue('white', 'gray.700')} p={8}>
                                     <Stack as="form" spacing={4} onSubmit={handleSubmit}>
+                                        <HStack alignItems="self-end">
+                                            <Box w='30%'>
+                                                <FormLabel>Selfie</FormLabel>
+                                            </Box>
+                                            <Box w='70%'>
+                                                <Input
+                                                    type="file"
+                                                    bgColor="#F2EEFF"
+                                                    onChange={handleSelfieUpload}
+                                                    disabled={loading} // Disable while loading
+                                                    required
+                                                />
+                                            </Box>
+                                        </HStack>
+                                        <HStack alignItems="self-end">
+                                            <Box w='30%'>
+                                                <FormLabel>ID Document</FormLabel>
+                                            </Box>
+                                            <Box w='70%'>
+                                                <Input
+                                                    type="file"
+                                                    bgColor="#F2EEFF"
+                                                    onChange={handleIdUpload}
+                                                    disabled={loading} // Disable while loading
+                                                    required
+                                                />
+                                            </Box>
+                                        </HStack>
+                                        <Button
+                                            onClick={handleKYCVerification}
+                                            isDisabled={loading} // Disable button while loading
+                                            colorScheme={loading ? 'gray' : 'blue'} // Change color to indicate loading
+                                        >
+                                            {loading ? <Spinner size="sm" /> : 'Verify ID & Selfie'} {/* Show loading spinner */}
+                                        </Button>
+                                        {kycStatus && <p>{kycStatus}</p>}
                                         <HStack>
                                             <Box>
                                                 <Input
                                                     type="text"
                                                     bgColor="#F2EEFF"
                                                     placeholder='First Name'
-                                                    name="firstName"  // Add this line
+                                                    name="firstName"
                                                     value={formData.firstName}
                                                     onChange={handleChange}
                                                     required
@@ -151,7 +262,7 @@ export default function RegisterPage() {
                                                     type="text"
                                                     bgColor="#F2EEFF"
                                                     placeholder='Last Name'
-                                                    name="lastName"  // Add this line
+                                                    name="lastName"
                                                     value={formData.lastName}
                                                     onChange={handleChange}
                                                     required
@@ -162,7 +273,7 @@ export default function RegisterPage() {
                                             type="text"
                                             bgColor="#F2EEFF"
                                             placeholder='Address'
-                                            name="address"  // Add this line
+                                            name="address"
                                             value={formData.address}
                                             onChange={handleChange}
                                             required
@@ -171,7 +282,7 @@ export default function RegisterPage() {
                                             type="date"
                                             bgColor="#F2EEFF"
                                             placeholder='Birthdate'
-                                            name="birthDate"  // Add this line
+                                            name="birthDate"
                                             value={formData.birthDate}
                                             onChange={handleChange}
                                             required
@@ -180,7 +291,7 @@ export default function RegisterPage() {
                                             type="email"
                                             bgColor="#F2EEFF"
                                             placeholder='Email'
-                                            name="email"  // Add this line
+                                            name="email"
                                             value={formData.email}
                                             onChange={handleChange}
                                             required
@@ -189,12 +300,21 @@ export default function RegisterPage() {
                                             <Button
                                                 loadingText="Submitting"
                                                 size="lg"
-                                                bg={'#6937FF'}
+                                                bg={'#8c56ff'}
                                                 color={'white'}
                                                 _hover={{ backgroundColor: "#5126d1" }}
                                                 type='submit'
                                             >
                                                 Sign up
+                                            </Button>
+                                            <Button
+                                                w='inherit'
+                                                m="auto"
+                                                variant="link"
+                                                colorScheme="blue"
+                                                onClick={goToLogin}
+                                            >
+                                                Back to Login
                                             </Button>
                                         </Stack>
                                     </Stack>
